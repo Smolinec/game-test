@@ -11,12 +11,20 @@ interface Props {
 
 interface Floater {
   id: number;
+  /** Vodorovný posun od středu krystalu. */
   x: number;
+  /** Boční drift během letu. */
+  drift: number;
   text: string;
   anim: Animated.Value;
 }
 
 const MAX_FLOATERS = 12;
+const FLOAT_DURATION_MS = 900;
+/** O kolik číslo vystoupá; musí být menší než HEADROOM + SIZE / 2, aby nenarazilo na okraj. */
+const FLOAT_RISE = 96;
+/** Volné místo nad krystalem, kam čísla stoupají, než vyblednou. */
+const HEADROOM = 44;
 
 export function ClickButton({ value, onTap }: Props) {
   const scale = useRef(new Animated.Value(1)).current;
@@ -35,15 +43,16 @@ export function ClickButton({ value, onTap }: Props) {
     const anim = new Animated.Value(0);
     const floater: Floater = {
       id,
-      x: (Math.random() - 0.5) * 120,
+      x: (Math.random() - 0.5) * 110,
+      drift: (Math.random() - 0.5) * 40,
       text: `+${formatNumber(value, { decimals: value < 10 ? 1 : 0 })}`,
       anim,
     };
     setFloaters((list) => [...list.slice(-(MAX_FLOATERS - 1)), floater]);
     Animated.timing(anim, {
       toValue: 1,
-      duration: 800,
-      easing: Easing.out(Easing.quad),
+      duration: FLOAT_DURATION_MS,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start(() => setFloaters((list) => list.filter((f) => f.id !== id)));
   }, [onTap, scale, value]);
@@ -58,10 +67,11 @@ export function ClickButton({ value, onTap }: Props) {
               styles.floaterText,
               {
                 transform: [
-                  { translateX: f.x },
-                  { translateY: f.anim.interpolate({ inputRange: [0, 1], outputRange: [0, -90] }) },
+                  { translateX: f.anim.interpolate({ inputRange: [0, 1], outputRange: [f.x, f.x + f.drift] }) },
+                  { translateY: f.anim.interpolate({ inputRange: [0, 1], outputRange: [0, -FLOAT_RISE] }) },
+                  { scale: f.anim.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0.6, 1.15, 0.85] }) },
                 ],
-                opacity: f.anim.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 1, 0] }),
+                opacity: f.anim.interpolate({ inputRange: [0, 0.45, 1], outputRange: [1, 0.95, 0] }),
               },
             ]}
           >
@@ -85,20 +95,22 @@ const SIZE = 150;
 const styles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    paddingTop: HEADROOM,
+    paddingBottom: spacing.md,
   },
   floaters: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: SIZE,
+    bottom: 0,
     alignItems: 'center',
-    justifyContent: 'center',
     zIndex: 2,
   },
   floaterText: {
     position: 'absolute',
+    // Start uprostřed krystalu.
+    top: HEADROOM + SIZE / 2 - 14,
     color: colors.gold,
     fontSize: 20,
     fontWeight: '800',
