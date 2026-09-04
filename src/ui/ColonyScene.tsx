@@ -109,11 +109,26 @@ function SpriteGroup({
 }) {
   const { settings } = useSettings();
   const count = spriteCount(owned);
-  const pop = useRef(new Animated.Value(settings.animations ? 0 : 1)).current;
+  // Skupina je vždy plně viditelná; „pop“ jen krátce zvětší ikony, když jich přibude.
+  // Viditelnost nesmí záviset na tom, zda animace doběhne (na některých zařízeních
+  // se spring s useNativeDriver nespustil a ikony zůstaly ve velikosti 0).
+  const pop = useRef(new Animated.Value(1)).current;
+  const lastCount = useRef(count);
 
   useEffect(() => {
-    Animated.spring(pop, { toValue: 1, useNativeDriver: true, speed: 14, bounciness: 12 }).start();
-  }, [pop, count]);
+    if (!settings.animations || count <= lastCount.current) {
+      lastCount.current = count;
+      pop.setValue(1);
+      return;
+    }
+    lastCount.current = count;
+    pop.setValue(1.35);
+    const anim = Animated.spring(pop, { toValue: 1, useNativeDriver: true, speed: 14, bounciness: 10 });
+    anim.start(({ finished }) => {
+      if (!finished) pop.setValue(1);
+    });
+    return () => anim.stop();
+  }, [pop, count, settings.animations]);
 
   // Každá skupina má jinou fázi, aby se nepohupovaly synchronně.
   const amplitude = floating ? 6 : 1.5;
