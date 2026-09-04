@@ -12,6 +12,7 @@ import {
 } from '../engine/engine';
 import { GameState } from '../engine/types';
 import { AmountSelector, BuyAmount } from './AmountSelector';
+import { BoostCard } from './BoostCard';
 import { ClickButton } from './ClickButton';
 import { GeneratorRow } from './GeneratorRow';
 import { Header } from './Header';
@@ -21,9 +22,10 @@ interface Props {
   state: GameState;
   onTap: () => { gained: number; golden: boolean };
   onBuy: (generatorId: string, count: number) => void;
+  onWatchBoostAd: () => void;
 }
 
-export function MineScreen({ state, onTap, onBuy }: Props) {
+export function MineScreen({ state, onTap, onBuy, onWatchBoostAd }: Props) {
   const [amount, setAmount] = useState<BuyAmount>(1);
   const perSecond = productionPerSecond(state);
   const tapValue = clickValue(state);
@@ -40,6 +42,7 @@ export function MineScreen({ state, onTap, onBuy }: Props) {
       <Header crystals={state.crystals} perSecond={perSecond} stardust={state.stardust} />
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <ClickButton value={tapValue} onTap={onTap} />
+        <BoostCard state={state} now={Date.now()} onWatch={onWatchBoostAd} />
         <AmountSelector value={amount} onChange={setAmount} />
         {GENERATORS.map((def, index) => {
           if (!isGeneratorVisible(state, index)) return null;

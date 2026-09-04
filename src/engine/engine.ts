@@ -13,6 +13,7 @@ import {
   UPGRADE_BY_ID,
 } from './data';
 import { achievementMultiplier } from './achievements';
+import { boostMultiplier } from './ads';
 import { SAVE_VERSION } from './migrations';
 import { maxLevel, STARDUST_UPGRADES, STARDUST_UPGRADE_BY_ID, StardustUpgradeDef } from './stardust';
 import { GameState, GeneratorDef, OfflineResult, UpgradeDef } from './types';
@@ -33,6 +34,9 @@ export function createInitialState(now: number = Date.now()): GameState {
     stardustUpgrades: {},
     achievements: [],
     daily: { lastClaimedAt: 0, streak: 0 },
+    boostSecondsLeft: 0,
+    boostAdCooldownUntil: 0,
+    adsWatched: 0,
     prestigeCount: 0,
     clicks: 0,
     lastSeenAt: now,
@@ -145,9 +149,9 @@ export function stardustMultiplier(state: GameState): number {
   return 1 + state.stardust * stardustBonusPerUnit(state);
 }
 
-/** Globální násobitel (vylepšení + prestiž + nároky z obchodu + úspěchy). */
+/** Globální násobitel (vylepšení + prestiž + nároky z obchodu + úspěchy + boost z videa). */
 export function globalMultiplier(state: GameState): number {
-  let mult = stardustMultiplier(state) * achievementMultiplier(state);
+  let mult = stardustMultiplier(state) * achievementMultiplier(state) * boostMultiplier(state);
   if (hasEntitlement(state, ENTITLEMENT_BOOST)) mult *= PREMIUM_BOOST_MULTIPLIER;
   for (const u of ownedUpgrades(state)) {
     if (u.effect.type === 'global') mult *= u.effect.multiplier;
@@ -245,12 +249,26 @@ export function addCrystals(state: GameState, amount: number): GameState {
   };
 }
 
+/**
+ * Produkce za `seconds` herního času včetně boostu, který během té doby
+ * může vypršet. Vrací výdělek a zbývající boost.
+ */
+function produceFor(state: GameState, seconds: number): { earned: number; boostSecondsLeft: number } {
+  const boosted = Math.min(seconds, state.boostSecondsLeft);
+  const boostSecondsLeft = Math.max(0, state.boostSecondsLeft - seconds);
+  if (boosted <= 0) return { earned: productionPerSecond(state) * seconds, boostSecondsLeft };
+  const perSecondBoosted = productionPerSecond(state);
+  const perSecondBase = perSecondBoosted / boostMultiplier(state);
+  return { earned: perSecondBoosted * boosted + perSecondBase * (seconds - boosted), boostSecondsLeft };
+}
+
 /** Posune hru o `dtSeconds` reálného hraní. */
 export function tick(state: GameState, dtSeconds: number, now: number = Date.now()): GameState {
   if (dtSeconds <= 0) return { ...state, lastSeenAt: now };
-  const earned = productionPerSecond(state) * dtSeconds;
+  const { earned, boostSecondsLeft } = produceFor(state, dtSeconds);
   return {
     ...addCrystals(state, earned),
+    boostSecondsLeft,
     playTimeSeconds: state.playTimeSeconds + dtSeconds,
     lastSeenAt: now,
   };
@@ -346,6 +364,9 @@ export function prestige(state: GameState, now: number = Date.now()): GameState 
     stardustUpgrades: state.stardustUpgrades,
     achievements: state.achievements,
     daily: state.daily,
+    boostSecondsLeft: state.boostSecondsLeft,
+    boostAdCooldownUntil: state.boostAdCooldownUntil,
+    adsWatched: state.adsWatched,
     prestigeCount: state.prestigeCount + 1,
     clicks: state.clicks,
     startedAt: state.startedAt,
@@ -368,9 +389,10 @@ export function applyOfflineProgress(state: GameState, now: number = Date.now())
   const capSeconds = offlineCapSeconds(state);
   const efficiency = offlineEfficiency(state);
   const seconds = Math.min(elapsedSeconds, capSeconds);
-  const earned = productionPerSecond(state) * seconds * efficiency;
+  const produced = produceFor(state, seconds);
+  const earned = produced.earned * efficiency;
   return {
-    state: { ...addCrystals(state, earned), lastSeenAt: now },
+    state: { ...addCrystals(state, earned), boostSecondsLeft: produced.boostSecondsLeft, lastSeenAt: now },
     seconds,
     elapsedSeconds,
     capSeconds,

@@ -8,6 +8,7 @@ import { useGame } from './src/hooks/useGame';
 import { AchievementToast } from './src/ui/AchievementToast';
 import { DailyRewardModal } from './src/ui/DailyRewardModal';
 import { MineScreen } from './src/ui/MineScreen';
+import { MockAdOverlay } from './src/ui/MockAdOverlay';
 import { OfflineModal } from './src/ui/OfflineModal';
 import { PrestigeScreen } from './src/ui/PrestigeScreen';
 import { ShopScreen } from './src/ui/ShopScreen';
@@ -25,7 +26,7 @@ export default function App() {
 }
 
 function Game() {
-  const { state, offline, unlockedAchievements, actions } = useGame();
+  const { state, offline, unlockedAchievements, adPlaying, actions } = useGame();
   const [tab, setTab] = useState<Tab>('mine');
   // Den, pro který hráč odložil denní odměnu tlačítkem „Později“.
   const [dailyPostponedDay, setDailyPostponedDay] = useState<number | null>(null);
@@ -59,7 +60,9 @@ function Game() {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar style="light" />
       <View style={styles.content}>
-        {tab === 'mine' && <MineScreen state={state} onTap={actions.tap} onBuy={actions.buy} />}
+        {tab === 'mine' && (
+          <MineScreen state={state} onTap={actions.tap} onBuy={actions.buy} onWatchBoostAd={() => void actions.watchAd('boost')} />
+        )}
         {tab === 'upgrades' && <UpgradesScreen state={state} onBuy={actions.purchaseUpgrade} />}
         {tab === 'prestige' && (
           <PrestigeScreen state={state} onPrestige={actions.doPrestige} onBuyStardustUpgrade={actions.buyStardustUpgrade} />
@@ -69,7 +72,8 @@ function Game() {
       </View>
       <TabBar tabs={tabs} active={tab} onChange={setTab} />
       <AchievementToast achievement={unlockedAchievements[0] ?? null} onDone={actions.dismissAchievement} />
-      <OfflineModal result={offline} onClose={actions.dismissOffline} />
+      <OfflineModal result={offline} onClose={actions.dismissOffline} onDouble={() => void actions.watchAd('double_offline')} />
+      <MockAdOverlay visible={adPlaying !== null} />
       <DailyRewardModal status={daily} onClaim={actions.claimDaily} onLater={() => setDailyPostponedDay(localDayNumber(Date.now()))} />
     </SafeAreaView>
   );

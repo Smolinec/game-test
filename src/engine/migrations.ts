@@ -8,7 +8,7 @@
  *
  * Při změně formátu: zvyš SAVE_VERSION, přidej krok do MIGRATIONS a test.
  */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 type RawSave = Record<string, unknown>;
 type MigrationStep = (data: RawSave) => RawSave;
@@ -34,6 +34,13 @@ const MIGRATIONS: Record<number, MigrationStep> = {
   3: (data) => ({
     ...data,
     daily: data.daily && typeof data.daily === 'object' ? data.daily : { lastClaimedAt: 0, streak: 0 },
+  }),
+  // v4 → v5: boost z odměněného videa a počítadlo videí.
+  4: (data) => ({
+    ...data,
+    boostSecondsLeft: typeof data.boostSecondsLeft === 'number' ? data.boostSecondsLeft : 0,
+    boostAdCooldownUntil: typeof data.boostAdCooldownUntil === 'number' ? data.boostAdCooldownUntil : 0,
+    adsWatched: typeof data.adsWatched === 'number' ? data.adsWatched : 0,
   }),
 };
 

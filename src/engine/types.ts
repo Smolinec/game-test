@@ -63,6 +63,12 @@ export interface GameState {
   achievements: string[];
   /** Denní odměna. */
   daily: { lastClaimedAt: number; streak: number };
+  /** Zbývající herní sekundy boostu ×2 z videa. */
+  boostSecondsLeft: number;
+  /** Epoch ms, do kdy nejde spustit další video pro boost. */
+  boostAdCooldownUntil: number;
+  /** Kolik odměněných videí hráč shlédl. */
+  adsWatched: number;
   prestigeCount: number;
   clicks: number;
   /** Epoch ms posledního uložení / ticku – slouží k offline výpočtu. */
@@ -82,4 +88,6 @@ export interface OfflineResult {
   /** Účinnost offline těžby, která pro hráče platila (0–1). */
   efficiency: number;
   earned: number;
+  /** True, když hráč výdělek zdvojnásobil videem. */
+  doubled?: boolean;
 }

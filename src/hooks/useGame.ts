@@ -11,10 +11,12 @@ import {
   prestige,
   tick,
 } from '../engine/engine';
+import { AdPlacement, doubleOfflineReward, startBoost } from '../engine/ads';
 import { claimDaily } from '../engine/daily';
 import { applyPurchase } from '../engine/shop';
 import { clearGame, loadGame, saveGame } from '../engine/storage';
 import { GameState, OfflineResult } from '../engine/types';
+import { adProvider, AdOutcome } from '../services/ads';
 import { purchaseProvider, PurchaseOutcome } from '../services/purchases';
 
 /** Jak často se počítá herní tick (ms). */
@@ -45,6 +47,8 @@ export interface GameActions {
   /** Odebere první úspěch z fronty k zobrazení. */
   dismissAchievement: () => void;
   claimDaily: () => void;
+  /** Přehraje odměněné video a při úspěchu připíše odměnu pro dané umístění. */
+  watchAd: (placement: AdPlacement) => Promise<AdOutcome>;
 }
 
 export interface GameHook {
@@ -52,6 +56,8 @@ export interface GameHook {
   offline: OfflineResult | null;
   /** Nově odemčené úspěchy čekající na zobrazení (nejstarší první). */
   unlockedAchievements: AchievementDef[];
+  /** Umístění reklamy, která právě „běží“, jinak null. */
+  adPlaying: AdPlacement | null;
   actions: GameActions;
 }
 
@@ -59,6 +65,8 @@ export function useGame(): GameHook {
   const [state, setState] = useState<GameState | null>(null);
   const [offline, setOffline] = useState<OfflineResult | null>(null);
   const [unlockedAchievements, setUnlockedAchievements] = useState<AchievementDef[]>([]);
+  const [adPlaying, setAdPlaying] = useState<AdPlacement | null>(null);
+  const offlineRef = useRef<OfflineResult | null>(null);
   const stateRef = useRef<GameState | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -77,6 +85,7 @@ export function useGame(): GameHook {
     (s: GameState, now: number): GameState => {
       const result = applyOfflineProgress(s, now);
       if (result.elapsedSeconds >= OFFLINE_POPUP_MIN_SECONDS && result.earned > 0) {
+        offlineRef.current = result;
         setOffline(result);
       }
       return result.state;
@@ -188,8 +197,40 @@ export function useGame(): GameHook {
     setOffline(null);
     setUnlockedAchievements([]);
   }, []);
-  const dismissOffline = useCallback(() => setOffline(null), []);
+  const dismissOffline = useCallback(() => {
+    offlineRef.current = null;
+    setOffline(null);
+  }, []);
   const dismissAchievement = useCallback(() => setUnlockedAchievements((q) => q.slice(1)), []);
+  const watchAd = useCallback(
+    async (placement: AdPlacement): Promise<AdOutcome> => {
+      if (adPlaying) return 'unavailable';
+      setAdPlaying(placement);
+      let outcome: AdOutcome;
+      try {
+        outcome = await adProvider.show(placement);
+      } catch (error) {
+        console.warn('Reklama selhala', error);
+        outcome = 'unavailable';
+      }
+      setAdPlaying(null);
+      if (outcome !== 'rewarded') return outcome;
+      if (placement === 'boost') {
+        update((s) => startBoost(s, Date.now()));
+      } else if (placement === 'double_offline') {
+        const pending = offlineRef.current;
+        if (pending && !pending.doubled) {
+          update((s) => doubleOfflineReward(s, pending.earned));
+          const doubled = { ...pending, earned: pending.earned * 2, doubled: true };
+          offlineRef.current = doubled;
+          setOffline(doubled);
+        }
+      }
+      if (stateRef.current) void saveGame(stateRef.current);
+      return outcome;
+    },
+    [adPlaying, update],
+  );
   const claimDailyReward = useCallback(() => {
     update((s) => claimDaily(s, Date.now()));
     if (stateRef.current) void saveGame(stateRef.current);
@@ -199,6 +240,7 @@ export function useGame(): GameHook {
     state,
     offline,
     unlockedAchievements,
+    adPlaying,
     actions: {
       tap,
       buyStardustUpgrade,
@@ -210,6 +252,7 @@ export function useGame(): GameHook {
       dismissOffline,
       dismissAchievement,
       claimDaily: claimDailyReward,
+      watchAd,
     },
   };
 }
