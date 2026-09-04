@@ -3,6 +3,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import { AchievementDef, checkAchievements } from '../engine/achievements';
 import {
   applyOfflineProgress,
+  ascendGalaxy,
   buyGenerator,
   buyStardustUpgrade as buyStardustUpgradeState,
   buyUpgrade,
@@ -40,6 +41,7 @@ export interface GameActions {
   buy: (generatorId: string, count: number) => void;
   purchaseUpgrade: (upgradeId: string) => void;
   doPrestige: () => void;
+  doAscendGalaxy: () => void;
   /** Provede nákup přes aktuálního poskytovatele a při úspěchu aplikuje efekt. */
   purchase: (productId: string) => Promise<PurchaseOutcome>;
   resetGame: () => Promise<void>;
@@ -172,6 +174,10 @@ export function useGame(): GameHook {
     update((s) => prestige(s, Date.now()));
     if (stateRef.current) void saveGame(stateRef.current);
   }, [update]);
+  const doAscendGalaxy = useCallback(() => {
+    update((s) => ascendGalaxy(s, Date.now()));
+    if (stateRef.current) void saveGame(stateRef.current);
+  }, [update]);
   const purchase = useCallback(
     async (productId: string): Promise<PurchaseOutcome> => {
       let outcome: PurchaseOutcome;
@@ -247,6 +253,7 @@ export function useGame(): GameHook {
       buy,
       purchaseUpgrade,
       doPrestige,
+      doAscendGalaxy,
       purchase,
       resetGame,
       dismissOffline,

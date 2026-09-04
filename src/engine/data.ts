@@ -16,6 +16,12 @@ export const OFFLINE_EFFICIENCY = 0.5;
 export const PRESTIGE_BASE = 1e7;
 /** Bonus k produkci za každý hvězdný prach (0.1 = +10 %). */
 export const STARDUST_BONUS = 0.1;
+/** Kolik neutraceného hvězdného prachu stojí založení nové galaxie. */
+export const GALAXY_COST = 1_000;
+/** Násobitel produkce za každou galaxii (×3, ×9, ×27…). */
+export const GALAXY_MULTIPLIER = 3;
+/** Bonus k zisku prachu při prestiži za každou galaxii (+100 % za galaxii). */
+export const GALAXY_PRESTIGE_BONUS = 1;
 
 export const GENERATORS: GeneratorDef[] = [
   {
@@ -107,6 +113,33 @@ export const GENERATORS: GeneratorDef[] = [
     baseCost: 7.5e10,
     costGrowth: 1.15,
     baseProduction: 1.6e6,
+  },
+  {
+    id: 'nebula',
+    name: 'Sklizeň mlhoviny',
+    icon: '🌌',
+    description: 'Stlačuje celé mlhoviny do krystalů.',
+    baseCost: 1e12,
+    costGrowth: 1.15,
+    baseProduction: 1e7,
+  },
+  {
+    id: 'blackhole',
+    name: 'Černá díra',
+    icon: '🌑',
+    description: 'Z horizontu událostí se nedostane nic, kromě krystalů.',
+    baseCost: 1.4e13,
+    costGrowth: 1.15,
+    baseProduction: 6.5e7,
+  },
+  {
+    id: 'multiverse',
+    name: 'Multiverzální důl',
+    icon: '♾️',
+    description: 'Těží v nekonečně mnoha vesmírech naráz.',
+    baseCost: 2e14,
+    costGrowth: 1.15,
+    baseProduction: 4.3e8,
   },
 ];
 

@@ -85,6 +85,7 @@ export function deserialize(raw: string | null | undefined, now: number = Date.n
     boostSecondsLeft: finiteNumber(data.boostSecondsLeft, 0),
     boostAdCooldownUntil: finiteNumber(data.boostAdCooldownUntil, 0),
     adsWatched: Math.floor(finiteNumber(data.adsWatched, 0)),
+    galaxies: Math.floor(finiteNumber(data.galaxies, 0)),
     prestigeCount: Math.floor(finiteNumber(data.prestigeCount, base.prestigeCount)),
     clicks: Math.floor(finiteNumber(data.clicks, base.clicks)),
     lastSeenAt: finiteNumber(data.lastSeenAt, now),

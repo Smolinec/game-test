@@ -12,6 +12,7 @@ export type AchievementMetric =
   | 'prestigeCount'
   | 'upgrades'
   | 'stardustEarned'
+  | 'galaxies'
   | 'playTimeSeconds';
 
 export interface AchievementDef {
@@ -69,6 +70,10 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     { id: 'stardust_100', name: 'Hvězdokupa', threshold: 100, description: 'Získej celkem 100 hvězdného prachu.' },
     { id: 'stardust_1000', name: 'Galaktické jádro', threshold: 1_000, description: 'Získej celkem 1 000 hvězdného prachu.' },
   ]),
+  ...series('galaxies', '🌌', [
+    { id: 'galaxy_1', name: 'Nová galaxie', threshold: 1, description: 'Založ první galaxii.' },
+    { id: 'galaxy_5', name: 'Stvořitel vesmírů', threshold: 5, description: 'Založ 5 galaxií.' },
+  ]),
   ...series('playTimeSeconds', '⏱️', [
     { id: 'time_1h', name: 'První směna', threshold: 3_600, description: 'Odehraj 1 hodinu.' },
     { id: 'time_10h', name: 'Noční směna', threshold: 36_000, description: 'Odehraj 10 hodin.' },
@@ -95,6 +100,8 @@ export function metricValue(state: GameState, metric: AchievementMetric): number
       return state.upgrades.length;
     case 'stardustEarned':
       return state.stardustEarned;
+    case 'galaxies':
+      return state.galaxies;
     case 'playTimeSeconds':
       return state.playTimeSeconds;
   }

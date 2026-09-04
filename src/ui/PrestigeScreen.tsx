@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { PRESTIGE_BASE } from '../engine/data';
+import { GALAXY_COST, GALAXY_MULTIPLIER, PRESTIGE_BASE } from '../engine/data';
 import {
+  canAscendGalaxy,
   canBuyStardustUpgrade,
   canPrestige,
+  galaxyMultiplier,
   crystalsForNextStardust,
   prestigeGain,
   productionPerSecond,
@@ -23,9 +25,10 @@ interface Props {
   state: GameState;
   onPrestige: () => void;
   onBuyStardustUpgrade: (upgradeId: string) => void;
+  onAscendGalaxy: () => void;
 }
 
-export function PrestigeScreen({ state, onPrestige, onBuyStardustUpgrade }: Props) {
+export function PrestigeScreen({ state, onPrestige, onBuyStardustUpgrade, onAscendGalaxy }: Props) {
   const gain = prestigeGain(state);
   const enabled = canPrestige(state);
   const nextAt = crystalsForNextStardust(state);
@@ -33,6 +36,9 @@ export function PrestigeScreen({ state, onPrestige, onBuyStardustUpgrade }: Prop
   const progress = Math.min(1, Math.max(0, (state.runCrystals - prevAt) / (nextAt - prevAt)));
   const bonusPercent = Math.round(stardustBonusPerUnit(state) * 100);
   const [confirming, setConfirming] = useState(false);
+  const [confirmingGalaxy, setConfirmingGalaxy] = useState(false);
+  const galaxyReady = canAscendGalaxy(state);
+  const galaxyProgress = Math.min(1, state.stardust / GALAXY_COST);
 
   return (
     <View style={styles.container}>
@@ -118,7 +124,47 @@ export function PrestigeScreen({ state, onPrestige, onBuyStardustUpgrade }: Prop
             </View>
           );
         })}
+
+        <Text style={styles.sectionHeading}>🌌 Galaxie</Text>
+        <Text style={styles.sectionText}>
+          Za {formatNumber(GALAXY_COST)} neutraceného prachu založíš novou galaxii. Přijdeš o prach, běh i hvězdná vylepšení,
+          ale každá galaxie trvale násobí produkci ×{GALAXY_MULTIPLIER} a zvyšuje zisk prachu při prestiži o 100 %.
+        </Text>
+        <View style={styles.card}>
+          <Stat label="Galaxie" value={`🌌 ${state.galaxies}`} />
+          <Stat label="Bonus z galaxií" value={`×${formatNumber(galaxyMultiplier(state))}`} />
+          <Stat label="Prach k založení" value={`✨ ${formatWhole(state.stardust)} / ${formatNumber(GALAXY_COST)}`} highlight={galaxyReady} />
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, styles.galaxyFill, { width: `${galaxyProgress * 100}%` }]} />
+          </View>
+        </View>
+        <Pressable
+          onPress={() => setConfirmingGalaxy(true)}
+          disabled={!galaxyReady}
+          style={({ pressed }) => [styles.button, styles.galaxyButton, !galaxyReady && styles.buttonDisabled, pressed && galaxyReady && styles.buttonPressed]}
+          accessibilityRole="button"
+        >
+          <Text style={[styles.buttonText, styles.galaxyButtonText, !galaxyReady && styles.buttonTextDisabled]}>
+            {galaxyReady ? 'Založit novou galaxii' : `Potřebuješ ✨ ${formatNumber(GALAXY_COST)}`}
+          </Text>
+        </Pressable>
       </ScrollView>
+      <ConfirmModal
+        visible={confirmingGalaxy}
+        icon="🌌"
+        title="Založit novou galaxii?"
+        message={
+          `Spotřebuješ ✨ ${formatWhole(state.stardust)} prachu a začneš úplně od začátku včetně hvězdných vylepšení. ` +
+          `Produkce bude navždy ×${GALAXY_MULTIPLIER} vyšší a prestiž dá o 100 % víc prachu. Úspěchy a nákupy zůstanou.`
+        }
+        confirmLabel="Založit galaxii"
+        destructive
+        onConfirm={() => {
+          setConfirmingGalaxy(false);
+          onAscendGalaxy();
+        }}
+        onCancel={() => setConfirmingGalaxy(false)}
+      />
       <ConfirmModal
         visible={confirming}
         icon="✨"
@@ -206,6 +252,16 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     backgroundColor: colors.gold,
+  },
+  galaxyFill: {
+    backgroundColor: colors.accent,
+  },
+  galaxyButton: {
+    backgroundColor: colors.accent,
+    marginBottom: spacing.md,
+  },
+  galaxyButtonText: {
+    color: colors.text,
   },
   button: {
     backgroundColor: colors.gold,

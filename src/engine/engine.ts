@@ -1,6 +1,9 @@
 import {
   ENTITLEMENT_BOOST,
   ENTITLEMENT_OFFLINE,
+  GALAXY_COST,
+  GALAXY_MULTIPLIER,
+  GALAXY_PRESTIGE_BONUS,
   GENERATORS,
   GENERATOR_BY_ID,
   OFFLINE_CAP_PREMIUM_SECONDS,
@@ -37,6 +40,7 @@ export function createInitialState(now: number = Date.now()): GameState {
     boostSecondsLeft: 0,
     boostAdCooldownUntil: 0,
     adsWatched: 0,
+    galaxies: 0,
     prestigeCount: 0,
     clicks: 0,
     lastSeenAt: now,
@@ -149,9 +153,14 @@ export function stardustMultiplier(state: GameState): number {
   return 1 + state.stardust * stardustBonusPerUnit(state);
 }
 
-/** Globální násobitel (vylepšení + prestiž + nároky z obchodu + úspěchy + boost z videa). */
+/** Násobitel produkce z galaxií. */
+export function galaxyMultiplier(state: GameState): number {
+  return Math.pow(GALAXY_MULTIPLIER, state.galaxies);
+}
+
+/** Globální násobitel (vylepšení + prestiž + galaxie + nároky z obchodu + úspěchy + boost z videa). */
 export function globalMultiplier(state: GameState): number {
-  let mult = stardustMultiplier(state) * achievementMultiplier(state) * boostMultiplier(state);
+  let mult = stardustMultiplier(state) * galaxyMultiplier(state) * achievementMultiplier(state) * boostMultiplier(state);
   if (hasEntitlement(state, ENTITLEMENT_BOOST)) mult *= PREMIUM_BOOST_MULTIPLIER;
   for (const u of ownedUpgrades(state)) {
     if (u.effect.type === 'global') mult *= u.effect.multiplier;
@@ -337,15 +346,21 @@ export function isGeneratorVisible(state: GameState, index: number): boolean {
 // Prestiž
 // ---------------------------------------------------------------------------
 
+/** Násobitel zisku prachu při prestiži z galaxií. */
+export function prestigeGainMultiplier(state: GameState): number {
+  return 1 + state.galaxies * GALAXY_PRESTIGE_BONUS;
+}
+
 /** Kolik hvězdného prachu by hráč získal, kdyby teď provedl prestiž. */
 export function prestigeGain(state: GameState): number {
-  return Math.floor(Math.sqrt(state.runCrystals / PRESTIGE_BASE));
+  return Math.floor(Math.sqrt(state.runCrystals / PRESTIGE_BASE) * prestigeGainMultiplier(state));
 }
 
 /** Kolik krystalů za běh je potřeba na další jednotku hvězdného prachu. */
 export function crystalsForNextStardust(state: GameState): number {
   const next = prestigeGain(state) + 1;
-  return next * next * PRESTIGE_BASE;
+  const root = next / prestigeGainMultiplier(state);
+  return root * root * PRESTIGE_BASE;
 }
 
 export function canPrestige(state: GameState): boolean {
@@ -367,6 +382,7 @@ export function prestige(state: GameState, now: number = Date.now()): GameState 
     boostSecondsLeft: state.boostSecondsLeft,
     boostAdCooldownUntil: state.boostAdCooldownUntil,
     adsWatched: state.adsWatched,
+    galaxies: state.galaxies,
     prestigeCount: state.prestigeCount + 1,
     clicks: state.clicks,
     startedAt: state.startedAt,
@@ -378,6 +394,39 @@ export function prestige(state: GameState, now: number = Date.now()): GameState 
     }
   }
   return next;
+}
+
+// ---------------------------------------------------------------------------
+// Galaxie – druhá vrstva prestiže
+// ---------------------------------------------------------------------------
+
+export function canAscendGalaxy(state: GameState): boolean {
+  return state.stardust >= GALAXY_COST;
+}
+
+/**
+ * Založí novou galaxii: spotřebuje veškerý neutracený prach, resetuje běh
+ * i hvězdná vylepšení, ale trvale znásobí produkci a zisk prachu.
+ * Nároky z obchodu, úspěchy, denní řada a boost zůstávají.
+ */
+export function ascendGalaxy(state: GameState, now: number = Date.now()): GameState {
+  if (!canAscendGalaxy(state)) return state;
+  return {
+    ...createInitialState(now),
+    allTimeCrystals: state.allTimeCrystals,
+    entitlements: state.entitlements,
+    stardustEarned: state.stardustEarned,
+    achievements: state.achievements,
+    daily: state.daily,
+    boostSecondsLeft: state.boostSecondsLeft,
+    boostAdCooldownUntil: state.boostAdCooldownUntil,
+    adsWatched: state.adsWatched,
+    galaxies: state.galaxies + 1,
+    prestigeCount: state.prestigeCount,
+    clicks: state.clicks,
+    startedAt: state.startedAt,
+    playTimeSeconds: state.playTimeSeconds,
+  };
 }
 
 // ---------------------------------------------------------------------------

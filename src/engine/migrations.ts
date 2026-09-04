@@ -8,7 +8,7 @@
  *
  * Při změně formátu: zvyš SAVE_VERSION, přidej krok do MIGRATIONS a test.
  */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 type RawSave = Record<string, unknown>;
 type MigrationStep = (data: RawSave) => RawSave;
@@ -42,6 +42,8 @@ const MIGRATIONS: Record<number, MigrationStep> = {
     boostAdCooldownUntil: typeof data.boostAdCooldownUntil === 'number' ? data.boostAdCooldownUntil : 0,
     adsWatched: typeof data.adsWatched === 'number' ? data.adsWatched : 0,
   }),
+  // v5 → v6: galaxie (druhá vrstva prestiže).
+  5: (data) => ({ ...data, galaxies: typeof data.galaxies === 'number' ? data.galaxies : 0 }),
 };
 
 export function saveVersionOf(data: RawSave): number {

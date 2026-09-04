@@ -7,17 +7,19 @@ a přes prestiž získáváš hvězdný prach s trvalým bonusem.
 ## Co hra umí
 
 - **Klepání** – ruční těžba s animací, plovoucími čísly a haptickou odezvou.
-- **10 generátorů** – od těžebního dronu po dimenzionální portál, cena roste geometricky (×1,15 za kus).
+- **13 generátorů** – od těžebního dronu po multiverzální důl, cena roste geometricky (×1,15 za kus).
 - **Hromadný nákup** – ×1 / ×10 / ×100 / MAX.
-- **49 vylepšení** – násobiče generátorů (při 10/25/50/100 kusech), vylepšení klepnutí, globální bonusy,
+- **61 vylepšení** – násobiče generátorů (při 10/25/50/100 kusech), vylepšení klepnutí, globální bonusy,
   „synchronizace“ (klepnutí přidává % produkce).
 - **Prestiž** – hvězdný prach = ⌊√(krystaly v běhu / 10 M)⌋, každý neutracený kus +10 % k produkci.
+- **Galaxie** – druhá vrstva prestiže: za 1 000 neutraceného prachu reset včetně hvězdných vylepšení, výměnou
+  za trvalé ×3 produkce a +100 % zisku prachu za každou galaxii.
 - **Hvězdná vylepšení** – prach jde utratit za trvalá vylepšení (rychlý start po prestiži, levnější zařízení,
   silnější klepnutí, efektivnější offline, Zlatá žíla, katalyzátor). Utracený prach přestane dávat pasivní bonus.
 - **Odměněná videa (testovací režim)** – ×2 produkce na hodinu (cooldown 4 h) a zdvojnásobení offline výdělku.
   Místo reklamy běží odpočet; skutečný AdMob se napojí přes stejné rozhraní v `src/services/ads.ts`.
 - **Denní odměna** – 7denní řada (10 až 180 minut produkce, 7. den hvězdný prach), počítá se podle místního dne.
-- **Úspěchy** – 26 úspěchů za klepání, těžbu, zařízení, prestiže a čas; každý dává trvale +1 % produkce.
+- **Úspěchy** – 28 úspěchů za klepání, těžbu, zařízení, prestiže a čas; každý dává trvale +1 % produkce.
 - **Offline postup** – po návratu dostaneš 50 % produkce za dobu nepřítomnosti, max 8 h, s přehledným dialogem.
 - **Automatické ukládání** – každých 10 s a při přechodu aplikace do pozadí (AsyncStorage).
 - **Obchod v testovacím režimu** – balíčky hvězdného prachu, časový skok a trvalé nároky (Dvojitý výkon,

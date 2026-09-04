@@ -65,7 +65,12 @@ function Game() {
         )}
         {tab === 'upgrades' && <UpgradesScreen state={state} onBuy={actions.purchaseUpgrade} />}
         {tab === 'prestige' && (
-          <PrestigeScreen state={state} onPrestige={actions.doPrestige} onBuyStardustUpgrade={actions.buyStardustUpgrade} />
+          <PrestigeScreen
+            state={state}
+            onPrestige={actions.doPrestige}
+            onBuyStardustUpgrade={actions.buyStardustUpgrade}
+            onAscendGalaxy={actions.doAscendGalaxy}
+          />
         )}
         {tab === 'shop' && <ShopScreen state={state} onPurchase={actions.purchase} />}
         {tab === 'stats' && <StatsScreen state={state} onReset={() => void actions.resetGame()} />}

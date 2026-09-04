@@ -69,6 +69,8 @@ export interface GameState {
   boostAdCooldownUntil: number;
   /** Kolik odměněných videí hráč shlédl. */
   adsWatched: number;
+  /** Počet založených galaxií (druhá vrstva prestiže). */
+  galaxies: number;
   prestigeCount: number;
   clicks: number;
   /** Epoch ms posledního uložení / ticku – slouží k offline výpočtu. */

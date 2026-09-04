@@ -36,6 +36,7 @@ export function StatsScreen({ state, onReset }: Props) {
           <Stat label="Zařízení celkem" value={formatWhole(totalGenerators)} />
           <Stat label="Zakoupená vylepšení" value={String(state.upgrades.length)} />
           <Stat label="Hvězdný prach (získáno)" value={`✨ ${formatWhole(state.stardustEarned)}`} />
+          <Stat label="Galaxie" value={`🌌 ${state.galaxies}`} />
           <Stat label="Nákupy z obchodu" value={String(state.entitlements.length)} />
           <Stat label="Shlédnutá videa" value={String(state.adsWatched)} />
           <Stat label="Odehráno" value={formatDuration(state.playTimeSeconds)} />
