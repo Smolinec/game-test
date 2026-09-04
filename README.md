@@ -25,6 +25,8 @@ a přes prestiž získáváš hvězdný prach s trvalým bonusem.
 - **Obchod v testovacím režimu** – balíčky hvězdného prachu, časový skok a trvalé nároky (Dvojitý výkon,
   Noční směna). Nákupy se zatím jen simulují, efekt se ale ve hře projeví.
 - **Účet (již brzy)** – tlačítka pro přihlášení přes Apple a Google jsou připravená, ale zatím nejsou napojená.
+- **Scéna kolonie** – nad krystalem je hvězdné pozadí, kde létají drony a lodě a na povrchu stojí vrtné
+  soupravy; sprity přibývají s počtem zařízení.
 - **Oslavy milníků** – konfety při prestiži a založení galaxie, oznámení při odemčení nového zařízení
   a počítadlo krystalů, které se k nové hodnotě dopočítá místo skoku.
 - **Zvuky** – šest syntetizovaných efektů (klepnutí, nákup, vylepšení, prestiž, Zlatá žíla, úspěch) bez licence,

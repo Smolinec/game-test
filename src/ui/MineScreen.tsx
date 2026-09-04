@@ -15,6 +15,7 @@ import { useT } from '../i18n';
 import { AmountSelector, BuyAmount } from './AmountSelector';
 import { BoostCard } from './BoostCard';
 import { ClickButton } from './ClickButton';
+import { ColonyScene } from './ColonyScene';
 import { GeneratorRow } from './GeneratorRow';
 import { Header } from './Header';
 import { colors, spacing } from './theme';
@@ -43,6 +44,7 @@ export function MineScreen({ state, onTap, onBuy, onWatchBoostAd }: Props) {
     <View style={styles.container}>
       <Header crystals={state.crystals} perSecond={perSecond} stardust={state.stardust} />
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ColonyScene state={state} />
         <ClickButton value={tapValue} onTap={onTap} />
         <BoostCard state={state} now={Date.now()} onWatch={onWatchBoostAd} />
         <AmountSelector value={amount} onChange={setAmount} />
