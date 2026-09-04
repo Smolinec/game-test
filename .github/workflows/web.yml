@@ -1,10 +1,12 @@
 name: Web (GitHub Pages)
 
 # Sestaví webovou verzi hry a nasadí ji na GitHub Pages.
-# V nastavení repozitáře je potřeba zapnout Pages se zdrojem "GitHub Actions".
+# V nastavení repozitáře (Settings → Pages → Build and deployment) musí být
+# zdroj nastavený na "GitHub Actions". Při zdroji "Deploy from a branch"
+# GitHub navíc spouští vlastní Jekyll build, který místo hry publikuje README.
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, claude/idle-game-ios-android-l78pxh]
   workflow_dispatch:
 
 permissions:
@@ -32,6 +34,7 @@ jobs:
       - name: Use relative asset paths (Pages serves the site from a sub-path)
         run: |
           sed -i 's|src="/_expo/|src="./_expo/|g; s|href="/favicon.ico"|href="./favicon.ico"|g' dist/index.html
+          touch dist/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
@@ -43,5 +46,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/configure-pages@v5
       - id: deployment
         uses: actions/deploy-pages@v4
