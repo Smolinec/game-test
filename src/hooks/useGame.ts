@@ -4,6 +4,7 @@ import { AchievementDef, checkAchievements } from '../engine/achievements';
 import {
   applyOfflineProgress,
   ascendGalaxy,
+  newlyVisibleGenerators,
   buyGenerator,
   buyStardustUpgrade as buyStardustUpgradeState,
   buyUpgrade,
@@ -49,6 +50,7 @@ export interface GameActions {
   dismissOffline: () => void;
   /** Odebere první úspěch z fronty k zobrazení. */
   dismissAchievement: () => void;
+  dismissUnlock: () => void;
   claimDaily: () => void;
   /** Přehraje odměněné video a při úspěchu připíše odměnu pro dané umístění. */
   watchAd: (placement: AdPlacement) => Promise<AdOutcome>;
@@ -61,6 +63,10 @@ export interface GameHook {
   unlockedAchievements: AchievementDef[];
   /** Umístění reklamy, která právě „běží“, jinak null. */
   adPlaying: AdPlacement | null;
+  /** Id zařízení, která se nově objevila v seznamu a čekají na oznámení. */
+  unlockedGenerators: string[];
+  /** Roste při každé události hodné konfet (prestiž, galaxie). */
+  celebrations: number;
   actions: GameActions;
 }
 
@@ -69,6 +75,8 @@ export function useGame(): GameHook {
   const [offline, setOffline] = useState<OfflineResult | null>(null);
   const [unlockedAchievements, setUnlockedAchievements] = useState<AchievementDef[]>([]);
   const [adPlaying, setAdPlaying] = useState<AdPlacement | null>(null);
+  const [unlockedGenerators, setUnlockedGenerators] = useState<string[]>([]);
+  const [celebrations, setCelebrations] = useState(0);
   const offlineRef = useRef<OfflineResult | null>(null);
   const stateRef = useRef<GameState | null>(null);
   const [ready, setReady] = useState(false);
@@ -81,6 +89,8 @@ export function useGame(): GameHook {
     if (next === current) return false;
     const checked = checkAchievements(next);
     if (checked.unlocked.length > 0) setUnlockedAchievements((q) => [...q, ...checked.unlocked]);
+    const unlocked = newlyVisibleGenerators(current, checked.state);
+    if (unlocked.length > 0) setUnlockedGenerators((q) => [...q, ...unlocked]);
     stateRef.current = checked.state;
     setState(checked.state);
     return true;
@@ -182,11 +192,16 @@ export function useGame(): GameHook {
   const doPrestige = useCallback(() => {
     if (!update((s) => prestige(s, Date.now()))) return;
     playSound('prestige');
+    setCelebrations((c) => c + 1);
+    // Po resetu běhu se zařízení „objeví“ znovu; to není nová událost.
+    setUnlockedGenerators([]);
     if (stateRef.current) void saveGame(stateRef.current);
   }, [update]);
   const doAscendGalaxy = useCallback(() => {
     if (!update((s) => ascendGalaxy(s, Date.now()))) return;
     playSound('prestige');
+    setCelebrations((c) => c + 1);
+    setUnlockedGenerators([]);
     if (stateRef.current) void saveGame(stateRef.current);
   }, [update]);
   const purchase = useCallback(
@@ -214,12 +229,14 @@ export function useGame(): GameHook {
     setState(fresh);
     setOffline(null);
     setUnlockedAchievements([]);
+    setUnlockedGenerators([]);
   }, []);
   const dismissOffline = useCallback(() => {
     offlineRef.current = null;
     setOffline(null);
   }, []);
   const dismissAchievement = useCallback(() => setUnlockedAchievements((q) => q.slice(1)), []);
+  const dismissUnlock = useCallback(() => setUnlockedGenerators((q) => q.slice(1)), []);
   const watchAd = useCallback(
     async (placement: AdPlacement): Promise<AdOutcome> => {
       if (adPlaying) return 'unavailable';
@@ -259,6 +276,8 @@ export function useGame(): GameHook {
     offline,
     unlockedAchievements,
     adPlaying,
+    unlockedGenerators,
+    celebrations,
     actions: {
       tap,
       buyStardustUpgrade,
@@ -270,6 +289,7 @@ export function useGame(): GameHook {
       resetGame,
       dismissOffline,
       dismissAchievement,
+      dismissUnlock,
       claimDaily: claimDailyReward,
       watchAd,
     },

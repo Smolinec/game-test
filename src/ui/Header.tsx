@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { formatRate, formatWhole } from '../engine/format';
 import { useT } from '../i18n';
+import { AnimatedNumber } from './AnimatedNumber';
 import { colors, radius, spacing } from './theme';
 
 interface Props {
@@ -22,9 +23,13 @@ export function Header({ crystals, perSecond, stardust }: Props) {
           </View>
         )}
       </View>
-      <Text style={styles.value} numberOfLines={1} adjustsFontSizeToFit>
-        💎 {formatWhole(crystals)}
-      </Text>
+      <AnimatedNumber
+        value={crystals}
+        format={(v) => `💎 ${formatWhole(v)}`}
+        style={styles.value}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      />
       <Text style={styles.rate}>{t('header.perSecond', { rate: formatRate(perSecond) })}</Text>
     </View>
   );

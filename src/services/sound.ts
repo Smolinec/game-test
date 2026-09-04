@@ -27,6 +27,8 @@ const VOLUME: Record<SoundName, number> = {
 
 let enabled = true;
 let modeConfigured = false;
+/** Prohlížeče blokují zvuk před první interakcí; pasivní zvuky do té doby přeskočíme. */
+let userInteracted = false;
 const players: Partial<Record<SoundName, AudioPlayer>> = {};
 
 export function setSoundEnabled(value: boolean): void {
@@ -57,9 +59,15 @@ function getPlayer(name: SoundName): AudioPlayer | null {
   }
 }
 
-/** Přehraje efekt od začátku; při vypnutých zvucích nedělá nic. */
-export function playSound(name: SoundName): void {
+/**
+ * Přehraje efekt od začátku; při vypnutých zvucích nedělá nic.
+ * `passive` označuje zvuky, které nespustil hráč (např. oznámení při načtení);
+ * ty se přehrají až poté, co hráč aspoň jednou něco udělal.
+ */
+export function playSound(name: SoundName, options: { passive?: boolean } = {}): void {
   if (!enabled) return;
+  if (options.passive && !userInteracted) return;
+  if (!options.passive) userInteracted = true;
   const player = getPlayer(name);
   if (!player) return;
   try {

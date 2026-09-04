@@ -147,6 +147,10 @@ export const cs = {
     counter: '{done} / {total} · +{pct} % produkce',
     unlocked: 'ÚSPĚCH ODEMČEN · +{pct} % PRODUKCE',
   },
+  unlock: {
+    label: 'NOVÉ ZAŘÍZENÍ K DISPOZICI',
+    description: 'Najdeš ho na konci seznamu v záložce Těžba.',
+  },
   daily: {
     title: '🎁 Denní odměna',
     streak: 'Řada {streak}. den v kuse',
@@ -328,6 +332,10 @@ export const en: Strings = {
     title: '🏆 Achievements',
     counter: '{done} / {total} · +{pct} % production',
     unlocked: 'ACHIEVEMENT UNLOCKED · +{pct} % PRODUCTION',
+  },
+  unlock: {
+    label: 'NEW DEVICE AVAILABLE',
+    description: 'Find it at the end of the list in the Mine tab.',
   },
   daily: {
     title: '🎁 Daily reward',

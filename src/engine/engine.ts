@@ -342,6 +342,16 @@ export function isGeneratorVisible(state: GameState, index: number): boolean {
   return ownedCount(state, prev.id) > 0 || state.runCrystals >= def.baseCost;
 }
 
+export function visibleGeneratorIds(state: GameState): string[] {
+  return GENERATORS.filter((_, index) => isGeneratorVisible(state, index)).map((g) => g.id);
+}
+
+/** Id zařízení, která se mezi dvěma stavy nově objevila v seznamu. */
+export function newlyVisibleGenerators(before: GameState, after: GameState): string[] {
+  const seen = new Set(visibleGeneratorIds(before));
+  return visibleGeneratorIds(after).filter((id) => !seen.has(id));
+}
+
 // ---------------------------------------------------------------------------
 // Prestiž
 // ---------------------------------------------------------------------------

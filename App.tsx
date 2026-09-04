@@ -6,7 +6,10 @@ import { dailyStatus, localDayNumber } from './src/engine/daily';
 import { availableUpgrades, canPrestige } from './src/engine/engine';
 import { useGame } from './src/hooks/useGame';
 import { SettingsProvider, useSettings, useT } from './src/i18n';
-import { AchievementToast } from './src/ui/AchievementToast';
+import { ACHIEVEMENT_BONUS } from './src/engine/achievements';
+import { GENERATOR_BY_ID } from './src/engine/data';
+import { Confetti } from './src/ui/Confetti';
+import { Notice, Toast } from './src/ui/Toast';
 import { DailyRewardModal } from './src/ui/DailyRewardModal';
 import { MineScreen } from './src/ui/MineScreen';
 import { MockAdOverlay } from './src/ui/MockAdOverlay';
@@ -29,9 +32,9 @@ export default function App() {
 }
 
 function Game() {
-  const { state, offline, unlockedAchievements, adPlaying, actions } = useGame();
+  const { state, offline, unlockedAchievements, adPlaying, unlockedGenerators, celebrations, actions } = useGame();
   const { ready: settingsReady } = useSettings();
-  const { t } = useT();
+  const { t, name, description } = useT();
   const [tab, setTab] = useState<Tab>('mine');
   // Den, pro který hráč odložil denní odměnu tlačítkem „Později“.
   const [dailyPostponedDay, setDailyPostponedDay] = useState<number | null>(null);
@@ -42,6 +45,35 @@ function Game() {
     () => (state ? availableUpgrades(state).filter((u) => u.cost <= state.crystals).length : 0),
     [state],
   );
+
+  // Úspěchy mají přednost před oznámením o novém zařízení.
+  let notice: Notice | null = null;
+  let dismissNotice = actions.dismissAchievement;
+  const achievement = unlockedAchievements[0];
+  const unlockedId = unlockedGenerators[0];
+  if (achievement) {
+    notice = {
+      key: `ach:${achievement.id}`,
+      icon: achievement.icon,
+      label: t('achievements.unlocked', { pct: Math.round(ACHIEVEMENT_BONUS * 100) }),
+      title: name('achievement', achievement),
+      description: description('achievement', achievement),
+      accent: 'gold',
+      sound: 'achievement',
+    };
+  } else if (unlockedId && GENERATOR_BY_ID[unlockedId]) {
+    const def = GENERATOR_BY_ID[unlockedId];
+    notice = {
+      key: `gen:${def.id}`,
+      icon: def.icon,
+      label: t('unlock.label'),
+      title: name('generator', def),
+      description: t('unlock.description'),
+      accent: 'accent',
+      sound: 'upgrade',
+    };
+    dismissNotice = actions.dismissUnlock;
+  }
 
   const tabs: TabItem[] = [
     { key: 'mine', label: t('tabs.mine'), icon: '💎' },
@@ -81,7 +113,8 @@ function Game() {
         {tab === 'stats' && <StatsScreen state={state} onReset={() => void actions.resetGame()} />}
       </View>
       <TabBar tabs={tabs} active={tab} onChange={setTab} />
-      <AchievementToast achievement={unlockedAchievements[0] ?? null} onDone={actions.dismissAchievement} />
+      <Toast notice={notice} onDone={dismissNotice} />
+      <Confetti burstKey={celebrations} />
       <OfflineModal result={offline} onClose={actions.dismissOffline} onDouble={() => void actions.watchAd('double_offline')} />
       <DailyRewardModal status={daily} onClaim={actions.claimDaily} onLater={() => setDailyPostponedDay(localDayNumber(Date.now()))} />
       <MockAdOverlay visible={adPlaying !== null} />
