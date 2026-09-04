@@ -33,8 +33,18 @@ Další příkazy:
 | `npm run android`   | spustí v Android emulátoru / zařízení      |
 | `npm run ios`       | spustí v iOS simulátoru (jen na macOS)     |
 | `npm run web`       | spustí webovou verzi v prohlížeči          |
+| `npm run web:export`| statický webový build do složky `dist/`    |
 | `npm test`          | jednotkové testy herního enginu (Jest)     |
 | `npm run typecheck` | kontrola typů (`tsc --noEmit`)             |
+| `npm run icons`     | přegeneruje ikony v `assets/` z SVG návrhu |
+
+## Webová verze na vyzkoušení
+
+- **Lokálně:** `npm run web` otevře hru v prohlížeči (React Native Web). Postup se ukládá do `localStorage`.
+- **Statický build:** `npm run web:export` vytvoří `dist/`, který jde nahrát na libovolný statický hosting.
+- **GitHub Pages:** workflow `.github/workflows/web.yml` po každém pushi do `main` sestaví web a nasadí ho
+  na Pages. V nastavení repozitáře (Settings → Pages) je potřeba jednou zvolit zdroj **GitHub Actions**.
+  Hra pak poběží na `https://<uživatel>.github.io/game-test/`.
 
 ## Sestavení do obchodů
 
@@ -48,7 +58,18 @@ eas build --platform ios       # .ipa pro App Store (vyžaduje Apple Developer �
 ```
 
 Identifikátory aplikace jsou v `app.json` (`ios.bundleIdentifier`, `android.package`) – před publikováním
-je uprav podle svého účtu. Ikony a splash v `assets/` jsou výchozí z Expo šablony, nahraď je vlastními.
+je uprav podle svého účtu.
+
+## Ikony
+
+Všechny ikony v `assets/` (ikona aplikace, adaptivní ikona pro Android včetně monochromatické varianty,
+splash a favicon) se generují z jednoho SVG návrhu v `tools/make-icons.js`. Barvy a tvar krystalu uprav tam
+a spusť `npm run icons`. Skript vykresluje SVG přes Playwright, takže potřebuje:
+
+```bash
+npm install -g playwright
+npx playwright install chromium
+```
 
 ## Struktura projektu
 
@@ -63,6 +84,8 @@ src/engine/             čistý TypeScript bez React Native – testovatelné j�
   storage.ts            napojení na AsyncStorage
 src/hooks/useGame.ts    herní smyčka (tick 100 ms), autosave, offline detekce
 src/ui/                 obrazovky a komponenty (Těžba, Vylepšení, Prestiž, Info)
+tools/make-icons.js     generátor ikon
+.github/workflows/      nasazení webové verze na GitHub Pages
 __tests__/              Jest testy enginu
 ```
 
