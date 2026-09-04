@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { formatRate, formatWhole } from '../engine/format';
+import { useT } from '../i18n';
 import { colors, radius, spacing } from './theme';
 
 interface Props {
@@ -10,10 +11,11 @@ interface Props {
 }
 
 export function Header({ crystals, perSecond, stardust }: Props) {
+  const { t } = useT();
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <Text style={styles.label}>Krystaly</Text>
+        <Text style={styles.label}>{t('header.crystals')}</Text>
         {stardust > 0 && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>✨ {formatWhole(stardust)}</Text>
@@ -23,7 +25,7 @@ export function Header({ crystals, perSecond, stardust }: Props) {
       <Text style={styles.value} numberOfLines={1} adjustsFontSizeToFit>
         💎 {formatWhole(crystals)}
       </Text>
-      <Text style={styles.rate}>{formatRate(perSecond)} / s</Text>
+      <Text style={styles.rate}>{t('header.perSecond', { rate: formatRate(perSecond) })}</Text>
     </View>
   );
 }

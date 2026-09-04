@@ -1,5 +1,6 @@
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useT } from '../i18n';
 import { colors, radius, spacing } from './theme';
 
 /**
@@ -7,34 +8,32 @@ import { colors, radius, spacing } from './theme';
  * jsou vidět, ale označená „Již brzy“, aby šlo vyzkoušet rozložení.
  */
 export function AccountCard() {
+  const { t } = useT();
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>👤 Účet</Text>
+        <Text style={styles.title}>{t('account.title')}</Text>
         <View style={styles.soonBadge}>
-          <Text style={styles.soonText}>JIŽ BRZY</Text>
+          <Text style={styles.soonText}>{t('account.soon')}</Text>
         </View>
       </View>
-      <Text style={styles.text}>
-        Přihlášením si uložíš postup do cloudu a budeš moct pokračovat na jiném telefonu nebo v prohlížeči.
-        Zatím se postup ukládá jen v tomto zařízení.
-      </Text>
+      <Text style={styles.text}>{t('account.text')}</Text>
       <View style={styles.buttons}>
-        <ProviderButton icon={Platform.OS === 'ios' ? '' : ''} label="Pokračovat přes Apple" />
-        <ProviderButton icon="G" label="Pokračovat přes Google" />
+        <ProviderButton icon={Platform.OS === 'ios' ? '' : ''} label={t('account.apple')} suffix={t('account.soonSuffix')} />
+        <ProviderButton icon="G" label={t('account.google')} suffix={t('account.soonSuffix')} />
       </View>
-      <Text style={styles.footnote}>Účet a cloudové ukládání připravujeme.</Text>
+      <Text style={styles.footnote}>{t('account.footnote')}</Text>
     </View>
   );
 }
 
-function ProviderButton({ icon, label }: { icon: string; label: string }) {
+function ProviderButton({ icon, label, suffix }: { icon: string; label: string; suffix: string }) {
   return (
     <Pressable
       disabled
       accessibilityRole="button"
       accessibilityState={{ disabled: true }}
-      accessibilityLabel={`${label} (již brzy)`}
+      accessibilityLabel={`${label} ${suffix}`}
       style={styles.providerButton}
     >
       <Text style={styles.providerIcon}>{icon}</Text>

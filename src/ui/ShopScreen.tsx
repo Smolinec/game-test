@@ -4,6 +4,7 @@ import { productionPerSecond } from '../engine/engine';
 import { formatNumber } from '../engine/format';
 import { ownsProduct, ProductDef, PRODUCTS } from '../engine/shop';
 import { GameState } from '../engine/types';
+import { Translator, useT } from '../i18n';
 import { purchaseProvider, PurchaseOutcome } from '../services/purchases';
 import { ConfirmModal } from './ConfirmModal';
 import { Header } from './Header';
@@ -19,6 +20,8 @@ type Dialog =
   | { kind: 'result'; product: ProductDef; outcome: PurchaseOutcome };
 
 export function ShopScreen({ state, onPurchase }: Props) {
+  const tr = useT();
+  const { t, name, description } = tr;
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -30,49 +33,59 @@ export function ShopScreen({ state, onPurchase }: Props) {
     setDialog({ kind: 'result', product: dialog.product, outcome });
   };
 
+  const perSecond = productionPerSecond(state);
+
   return (
     <View style={styles.container}>
-      <Header crystals={state.crystals} perSecond={productionPerSecond(state)} stardust={state.stardust} />
+      <Header crystals={state.crystals} perSecond={perSecond} stardust={state.stardust} />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.heading}>🛒 Obchod</Text>
+        <Text style={styles.heading}>{t('shop.title')}</Text>
         {purchaseProvider.isSandbox && (
           <View style={styles.sandbox}>
-            <Text style={styles.sandboxTitle}>🧪 {purchaseProvider.modeLabel}</Text>
-            <Text style={styles.sandboxText}>
-              Nákupy se neúčtují. Slouží k vyzkoušení nabídky a efektů. Skutečné platby přes App Store a Google
-              Play napojíme později.
-            </Text>
+            <Text style={styles.sandboxTitle}>{t('shop.sandboxTitle')}</Text>
+            <Text style={styles.sandboxText}>{t('shop.sandboxText')}</Text>
           </View>
         )}
 
-        <Text style={styles.section}>Trvalá vylepšení</Text>
+        <Text style={styles.section}>{t('shop.permanent')}</Text>
         {PRODUCTS.filter((p) => p.kind === 'entitlement').map((p) => (
-          <ProductCard key={p.id} product={p} owned={ownsProduct(state, p.id)} onPress={() => setDialog({ kind: 'confirm', product: p })} />
+          <ProductCard
+            key={p.id}
+            product={p}
+            owned={ownsProduct(state, p.id)}
+            onPress={() => setDialog({ kind: 'confirm', product: p })}
+            tr={tr}
+          />
         ))}
 
-        <Text style={styles.section}>Balíčky</Text>
+        <Text style={styles.section}>{t('shop.packs')}</Text>
         {PRODUCTS.filter((p) => p.kind === 'consumable').map((p) => (
           <ProductCard
             key={p.id}
             product={p}
             owned={false}
-            hint={p.effect.type === 'timeWarp' ? `Teď by dal 💎 ${formatNumber(productionPerSecond(state) * p.effect.hours * 3600)}` : undefined}
+            hint={
+              p.effect.type === 'timeWarp'
+                ? t('shop.timeWarpHint', { amount: formatNumber(perSecond * p.effect.hours * 3600) })
+                : undefined
+            }
             onPress={() => setDialog({ kind: 'confirm', product: p })}
+            tr={tr}
           />
         ))}
 
         <Pressable disabled style={styles.restore} accessibilityRole="button" accessibilityState={{ disabled: true }}>
-          <Text style={styles.restoreText}>Obnovit nákupy · již brzy</Text>
+          <Text style={styles.restoreText}>{t('shop.restore')}</Text>
         </Pressable>
       </ScrollView>
 
       <ConfirmModal
         visible={dialog?.kind === 'confirm'}
         icon={dialog?.product.icon}
-        title={dialog?.product.name ?? ''}
-        message={dialog ? `${dialog.product.description}\n\nCena: ${dialog.product.priceLabel}` : ''}
-        note={purchaseProvider.isSandbox ? `${purchaseProvider.modeLabel} · nic se neúčtuje` : undefined}
-        confirmLabel={dialog ? `Zaplatit ${dialog.product.priceLabel}` : ''}
+        title={dialog ? name('product', dialog.product) : ''}
+        message={dialog ? `${description('product', dialog.product)}\n\n${t('shop.price', { price: dialog.product.priceLabel })}` : ''}
+        note={purchaseProvider.isSandbox ? t('shop.sandboxNote') : undefined}
+        confirmLabel={dialog ? t('shop.pay', { price: dialog.product.priceLabel }) : ''}
         busy={busy}
         onConfirm={() => void confirmPurchase()}
         onCancel={() => setDialog(null)}
@@ -80,10 +93,10 @@ export function ShopScreen({ state, onPurchase }: Props) {
       <ConfirmModal
         visible={dialog?.kind === 'result'}
         icon={dialog?.kind === 'result' && dialog.outcome === 'success' ? '✅' : '⚠️'}
-        title={dialog?.kind === 'result' ? resultTitle(dialog.outcome) : ''}
-        message={dialog?.kind === 'result' ? resultMessage(dialog.product, dialog.outcome) : ''}
-        confirmLabel="Zavřít"
-        cancelLabel="Zpět do obchodu"
+        title={dialog?.kind === 'result' ? resultTitle(tr, dialog.outcome) : ''}
+        message={dialog?.kind === 'result' ? resultMessage(tr, dialog.product, dialog.outcome) : ''}
+        confirmLabel={t('common.close')}
+        cancelLabel={t('shop.backToShop')}
         onConfirm={() => setDialog(null)}
         onCancel={() => setDialog(null)}
       />
@@ -91,25 +104,25 @@ export function ShopScreen({ state, onPurchase }: Props) {
   );
 }
 
-function resultTitle(outcome: PurchaseOutcome): string {
-  if (outcome === 'success') return 'Hotovo!';
-  if (outcome === 'cancelled') return 'Nákup zrušen';
-  return 'Nákup se nepovedl';
+function resultTitle({ t }: Translator, outcome: PurchaseOutcome): string {
+  if (outcome === 'success') return t('shop.resultDone');
+  if (outcome === 'cancelled') return t('shop.resultCancelled');
+  return t('shop.resultFailed');
 }
 
-function resultMessage(product: ProductDef, outcome: PurchaseOutcome): string {
+function resultMessage({ t, name }: Translator, product: ProductDef, outcome: PurchaseOutcome): string {
   if (outcome === 'success') {
     switch (product.effect.type) {
       case 'stardust':
-        return `Přibylo ti ✨ ${product.effect.amount} hvězdného prachu. Bonus k produkci platí okamžitě.`;
+        return t('shop.msgStardust', { amount: product.effect.amount });
       case 'timeWarp':
-        return `Kolonie právě odpracovala ${product.effect.hours} hodiny. Krystaly jsou na účtu.`;
+        return t('shop.msgTimeWarp', { hours: product.effect.hours });
       case 'entitlement':
-        return `${product.name} je aktivní a zůstane ti i po prestiži.`;
+        return t('shop.msgEntitlement', { name: name('product', product) });
     }
   }
-  if (outcome === 'cancelled') return 'Nic se nestalo, nákup jsi zrušil.';
-  return 'Obchod neodpověděl. Zkus to prosím za chvíli znovu.';
+  if (outcome === 'cancelled') return t('shop.msgCancelled');
+  return t('shop.msgFailed');
 }
 
 function ProductCard({
@@ -117,17 +130,21 @@ function ProductCard({
   owned,
   hint,
   onPress,
+  tr,
 }: {
   product: ProductDef;
   owned: boolean;
   hint?: string;
   onPress: () => void;
+  tr: Translator;
 }) {
+  const { t, name, description } = tr;
+  const title = name('product', product);
   return (
     <View style={[styles.card, product.featured && styles.cardFeatured]}>
       {product.featured && !owned && (
         <View style={styles.featuredBadge}>
-          <Text style={styles.featuredText}>NEJOBLÍBENĚJŠÍ</Text>
+          <Text style={styles.featuredText}>{t('shop.featured')}</Text>
         </View>
       )}
       <View style={styles.cardRow}>
@@ -135,8 +152,8 @@ function ProductCard({
           <Text style={styles.icon}>{product.icon}</Text>
         </View>
         <View style={styles.info}>
-          <Text style={styles.name}>{product.name}</Text>
-          <Text style={styles.description}>{product.description}</Text>
+          <Text style={styles.name}>{title}</Text>
+          <Text style={styles.description}>{description('product', product)}</Text>
           {!!hint && <Text style={styles.hint}>{hint}</Text>}
         </View>
       </View>
@@ -144,10 +161,10 @@ function ProductCard({
         onPress={onPress}
         disabled={owned}
         accessibilityRole="button"
-        accessibilityLabel={owned ? `${product.name} vlastníš` : `Koupit ${product.name} za ${product.priceLabel}`}
+        accessibilityLabel={owned ? t('shop.ownedLabel', { name: title }) : t('shop.buyLabel', { name: title, price: product.priceLabel })}
         style={({ pressed }) => [styles.buy, owned && styles.buyOwned, pressed && !owned && styles.buyPressed]}
       >
-        <Text style={[styles.buyText, owned && styles.buyOwnedText]}>{owned ? '✓ Vlastníš' : product.priceLabel}</Text>
+        <Text style={[styles.buyText, owned && styles.buyOwnedText]}>{owned ? t('shop.owned') : product.priceLabel}</Text>
       </Pressable>
     </View>
   );

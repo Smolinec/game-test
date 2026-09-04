@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { DAILY_REWARDS, DailyStatus } from '../engine/daily';
 import { formatWhole } from '../engine/format';
+import { useT } from '../i18n';
 import { colors, radius, spacing } from './theme';
 
 interface Props {
@@ -11,16 +12,17 @@ interface Props {
 }
 
 export function DailyRewardModal({ status, onClaim, onLater }: Props) {
+  const { t } = useT();
   const visible = !!status && status.claimable;
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onLater}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>🎁 Denní odměna</Text>
+          <Text style={styles.title}>{t('daily.title')}</Text>
           {status && (
             <>
               <Text style={styles.subtitle}>
-                {status.streak > 1 ? `Řada ${status.streak}. den v kuse` : 'Vracej se každý den a odměna poroste.'}
+                {status.streak > 1 ? t('daily.streak', { streak: status.streak }) : t('daily.intro')}
               </Text>
               <View style={styles.days}>
                 {DAILY_REWARDS.map((r) => {
@@ -35,17 +37,17 @@ export function DailyRewardModal({ status, onClaim, onLater }: Props) {
                   );
                 })}
               </View>
-              <Text style={styles.rewardLabel}>Dnes dostaneš</Text>
+              <Text style={styles.rewardLabel}>{t('daily.today')}</Text>
               <Text style={styles.reward}>💎 {formatWhole(status.crystals)}</Text>
-              {status.reward.stardust > 0 && <Text style={styles.rewardExtra}>+ ✨ {status.reward.stardust} hvězdného prachu</Text>}
-              <Text style={styles.note}>Odpovídá {status.reward.productionMinutes} minutám tvé aktuální produkce.</Text>
+              {status.reward.stardust > 0 && <Text style={styles.rewardExtra}>{t('daily.extra', { amount: status.reward.stardust })}</Text>}
+              <Text style={styles.note}>{t('daily.note', { minutes: status.reward.productionMinutes })}</Text>
             </>
           )}
           <Pressable onPress={onClaim} accessibilityRole="button" style={({ pressed }) => [styles.claim, pressed && styles.pressed]}>
-            <Text style={styles.claimText}>Vybrat odměnu</Text>
+            <Text style={styles.claimText}>{t('daily.claim')}</Text>
           </Pressable>
           <Pressable onPress={onLater} accessibilityRole="button" style={styles.later}>
-            <Text style={styles.laterText}>Později</Text>
+            <Text style={styles.laterText}>{t('common.later')}</Text>
           </Pressable>
         </View>
       </View>

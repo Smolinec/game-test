@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatNumber, formatRate } from '../engine/format';
 import { GeneratorDef } from '../engine/types';
+import { useT } from '../i18n';
 import { colors, radius, spacing } from './theme';
 
 interface Props {
@@ -24,6 +25,8 @@ export const GeneratorRow = React.memo(function GeneratorRow({
   affordable,
   onBuy,
 }: Props) {
+  const { t, name, description } = useT();
+  const title = name('generator', def);
   return (
     <View style={styles.row}>
       <View style={styles.iconBox}>
@@ -32,15 +35,17 @@ export const GeneratorRow = React.memo(function GeneratorRow({
       <View style={styles.info}>
         <View style={styles.titleRow}>
           <Text style={styles.name} numberOfLines={1}>
-            {def.name}
+            {title}
           </Text>
           <Text style={styles.owned}>{owned}</Text>
         </View>
         <Text style={styles.description} numberOfLines={2}>
-          {def.description}
+          {description('generator', def)}
         </Text>
         <Text style={styles.production}>
-          {owned > 0 ? `${formatRate(production)} / s` : `${formatRate(def.baseProduction)} / s za kus`}
+          {owned > 0
+            ? t('header.perSecond', { rate: formatRate(production) })
+            : t('generator.perUnit', { rate: formatRate(def.baseProduction) })}
         </Text>
       </View>
       <Pressable
@@ -52,7 +57,7 @@ export const GeneratorRow = React.memo(function GeneratorRow({
           pressed && affordable && styles.buyButtonPressed,
         ]}
         accessibilityRole="button"
-        accessibilityLabel={`Koupit ${buyCount}× ${def.name}`}
+        accessibilityLabel={t('buy.countLabel', { count: buyCount, name: title })}
       >
         <Text style={[styles.buyCount, !affordable && styles.buyTextDisabled]}>×{buyCount}</Text>
         <Text style={[styles.buyCost, !affordable && styles.buyTextDisabled]}>💎 {formatNumber(cost)}</Text>

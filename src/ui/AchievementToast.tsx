@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ACHIEVEMENT_BONUS, AchievementDef } from '../engine/achievements';
+import { useSettings, useT } from '../i18n';
 import { colors, radius, spacing } from './theme';
 
 interface Props {
@@ -12,21 +13,24 @@ const SHOW_MS = 3200;
 
 /** Proužek nahoře, který se vysune při odemčení úspěchu a sám zmizí. */
 export function AchievementToast({ achievement, onDone }: Props) {
+  const { t, name, description } = useT();
+  const { settings } = useSettings();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!achievement) return;
+    const slide = settings.animations ? 320 : 0;
     anim.setValue(0);
     const sequence = Animated.sequence([
-      Animated.timing(anim, { toValue: 1, duration: 320, easing: Easing.out(Easing.back(1.4)), useNativeDriver: true }),
+      Animated.timing(anim, { toValue: 1, duration: slide, easing: Easing.out(Easing.back(1.4)), useNativeDriver: true }),
       Animated.delay(SHOW_MS),
-      Animated.timing(anim, { toValue: 0, duration: 260, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+      Animated.timing(anim, { toValue: 0, duration: slide ? 260 : 0, easing: Easing.in(Easing.quad), useNativeDriver: true }),
     ]);
     sequence.start(({ finished }) => {
       if (finished) onDone();
     });
     return () => sequence.stop();
-  }, [achievement, anim, onDone]);
+  }, [achievement, anim, onDone, settings.animations]);
 
   if (!achievement) return null;
 
@@ -44,9 +48,9 @@ export function AchievementToast({ achievement, onDone }: Props) {
       <Pressable onPress={onDone} style={styles.toast} accessibilityRole="alert">
         <Text style={styles.icon}>{achievement.icon}</Text>
         <View style={styles.text}>
-          <Text style={styles.label}>ÚSPĚCH ODEMČEN · +{Math.round(ACHIEVEMENT_BONUS * 100)} % PRODUKCE</Text>
-          <Text style={styles.name}>{achievement.name}</Text>
-          <Text style={styles.description}>{achievement.description}</Text>
+          <Text style={styles.label}>{t('achievements.unlocked', { pct: Math.round(ACHIEVEMENT_BONUS * 100) })}</Text>
+          <Text style={styles.name}>{name('achievement', achievement)}</Text>
+          <Text style={styles.description}>{description('achievement', achievement)}</Text>
         </View>
       </Pressable>
     </Animated.View>

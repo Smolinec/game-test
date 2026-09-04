@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
+import { useT } from '../i18n';
 import { adProvider } from '../services/ads';
 import { colors, radius, spacing } from './theme';
 
@@ -9,6 +10,7 @@ interface Props {
 
 /** Náhrada reklamy v testovacím režimu: tmavá obrazovka s odpočtem. */
 export function MockAdOverlay({ visible }: Props) {
+  const { t } = useT();
   const total = Math.ceil(adProvider.durationMs / 1000);
   const [left, setLeft] = useState(total);
 
@@ -23,13 +25,11 @@ export function MockAdOverlay({ visible }: Props) {
     <Modal visible={visible} transparent={false} animationType="fade" onRequestClose={() => undefined}>
       <View style={styles.screen}>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>🧪 {adProvider.modeLabel.toUpperCase()}</Text>
+          <Text style={styles.badgeText}>{t('ad.badge')}</Text>
         </View>
         <Text style={styles.icon}>📺</Text>
-        <Text style={styles.title}>Tady by běžela reklama</Text>
-        <Text style={styles.text}>
-          V ostré verzi se zde přehraje odměněné video z AdMobu. Teď jen počkej, odměna se připíše automaticky.
-        </Text>
+        <Text style={styles.title}>{t('ad.title')}</Text>
+        <Text style={styles.text}>{t('ad.text')}</Text>
         <View style={styles.countdown}>
           <Text style={styles.countdownText}>{left}</Text>
         </View>

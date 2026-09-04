@@ -1,5 +1,12 @@
 const SUFFIXES = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
 
+/** Desetinný oddělovač podle jazyka rozhraní; výchozí je čeština. */
+let decimalSeparator = ',';
+
+export function setNumberLocale(language: 'cs' | 'en'): void {
+  decimalSeparator = language === 'en' ? '.' : ',';
+}
+
 /**
  * Formátuje velká čísla: 999 → "999", 12 345 → "12,3K", 1,5e9 → "1,50B".
  * Nad rozsah přípon spadne do vědeckého zápisu.
@@ -13,7 +20,7 @@ export function formatNumber(value: number, options: { decimals?: number } = {})
   }
   const exponent = Math.floor(Math.log10(value) / 3);
   if (exponent >= SUFFIXES.length) {
-    return value.toExponential(2).replace('.', ',').replace('e+', 'e');
+    return value.toExponential(2).replace('.', decimalSeparator).replace('e+', 'e');
   }
   const scaled = value / Math.pow(1000, exponent);
   const decimals = scaled >= 100 ? 1 : 2;
@@ -47,7 +54,7 @@ export function formatDuration(totalSeconds: number): string {
 }
 
 function trimZeros(text: string): string {
-  const withComma = text.replace('.', ',');
-  if (!withComma.includes(',')) return withComma;
-  return withComma.replace(/,?0+$/, '');
+  if (!text.includes('.')) return text;
+  const trimmed = text.replace(/\.?0+$/, '');
+  return trimmed.replace('.', decimalSeparator);
 }

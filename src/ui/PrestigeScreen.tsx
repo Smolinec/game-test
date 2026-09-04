@@ -5,18 +5,20 @@ import {
   canAscendGalaxy,
   canBuyStardustUpgrade,
   canPrestige,
-  galaxyMultiplier,
   crystalsForNextStardust,
+  galaxyMultiplier,
   prestigeGain,
+  prestigeGainMultiplier,
   productionPerSecond,
   stardustBonusPerUnit,
   stardustMultiplier,
   stardustUpgradeCost,
   stardustUpgradeLevel,
 } from '../engine/engine';
-import { maxLevel, STARDUST_UPGRADES } from '../engine/stardust';
 import { formatNumber, formatWhole } from '../engine/format';
+import { maxLevel, STARDUST_UPGRADES } from '../engine/stardust';
 import { GameState } from '../engine/types';
+import { useT } from '../i18n';
 import { ConfirmModal } from './ConfirmModal';
 import { Header } from './Header';
 import { colors, radius, spacing } from './theme';
@@ -29,10 +31,12 @@ interface Props {
 }
 
 export function PrestigeScreen({ state, onPrestige, onBuyStardustUpgrade, onAscendGalaxy }: Props) {
+  const { t, name, description } = useT();
   const gain = prestigeGain(state);
   const enabled = canPrestige(state);
   const nextAt = crystalsForNextStardust(state);
-  const prevAt = gain * gain * PRESTIGE_BASE;
+  // Krystaly, při kterých hráč dosáhl aktuálního zisku (dolní hranice ukazatele).
+  const prevAt = Math.pow(gain / prestigeGainMultiplier(state), 2) * PRESTIGE_BASE;
   const progress = Math.min(1, Math.max(0, (state.runCrystals - prevAt) / (nextAt - prevAt)));
   const bonusPercent = Math.round(stardustBonusPerUnit(state) * 100);
   const [confirming, setConfirming] = useState(false);
@@ -44,23 +48,19 @@ export function PrestigeScreen({ state, onPrestige, onBuyStardustUpgrade, onAsce
     <View style={styles.container}>
       <Header crystals={state.crystals} perSecond={productionPerSecond(state)} stardust={state.stardust} />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.heading}>✨ Prestiž</Text>
-        <Text style={styles.text}>
-          Prestiž resetuje tvůj běh, ale za krystaly vytěžené v tomto běhu dostaneš hvězdný prach. Každý
-          neutracený prach zvyšuje veškerou produkci i sílu klepnutí o {bonusPercent} %. Prach můžeš také utratit
-          za hvězdná vylepšení níže.
-        </Text>
+        <Text style={styles.heading}>{t('prestige.title')}</Text>
+        <Text style={styles.text}>{t('prestige.intro', { pct: bonusPercent })}</Text>
 
         <View style={styles.card}>
-          <Stat label="Hvězdný prach k utracení" value={`✨ ${formatWhole(state.stardust)}`} />
-          <Stat label="Bonus z neutraceného prachu" value={`×${stardustMultiplier(state).toFixed(2).replace('.', ',')}`} />
-          <Stat label="Počet prestiží" value={String(state.prestigeCount)} />
+          <Stat label={t('prestige.stardustToSpend')} value={`✨ ${formatWhole(state.stardust)}`} />
+          <Stat label={t('prestige.bonus')} value={`×${formatNumber(stardustMultiplier(state), { decimals: 2 })}`} />
+          <Stat label={t('prestige.count')} value={String(state.prestigeCount)} />
         </View>
 
         <View style={styles.card}>
-          <Stat label="Krystaly v tomto běhu" value={`💎 ${formatWhole(state.runCrystals)}`} />
-          <Stat label="Zisk při prestiži teď" value={`✨ ${gain}`} highlight={enabled} />
-          <Stat label="Další prach při" value={`💎 ${formatNumber(nextAt)}`} />
+          <Stat label={t('prestige.runCrystals')} value={`💎 ${formatWhole(state.runCrystals)}`} />
+          <Stat label={t('prestige.gainNow')} value={`✨ ${gain}`} highlight={enabled} />
+          <Stat label={t('prestige.nextAt')} value={`💎 ${formatNumber(nextAt)}`} />
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
           </View>
@@ -73,20 +73,18 @@ export function PrestigeScreen({ state, onPrestige, onBuyStardustUpgrade, onAsce
           accessibilityRole="button"
         >
           <Text style={[styles.buttonText, !enabled && styles.buttonTextDisabled]}>
-            {enabled ? `Provést prestiž za ✨ ${gain}` : `Potřebuješ 💎 ${formatNumber(PRESTIGE_BASE)} v běhu`}
+            {enabled ? t('prestige.buttonReady', { gain }) : t('prestige.buttonNeed', { amount: formatNumber(PRESTIGE_BASE) })}
           </Text>
         </Pressable>
 
-        <Text style={styles.sectionHeading}>🔮 Hvězdná vylepšení</Text>
-        <Text style={styles.sectionText}>
-          Trvalá vylepšení za hvězdný prach. Utracený prach už nedává pasivní bonus, vylepšení ti ale zůstane
-          napořád.
-        </Text>
+        <Text style={styles.sectionHeading}>{t('prestige.stardustTitle')}</Text>
+        <Text style={styles.sectionText}>{t('prestige.stardustIntro')}</Text>
         {STARDUST_UPGRADES.map((def) => {
           const level = stardustUpgradeLevel(state, def.id);
           const max = maxLevel(def);
           const cost = stardustUpgradeCost(state, def.id);
           const affordable = canBuyStardustUpgrade(state, def.id);
+          const title = name('stardustUpgrade', def);
           return (
             <View key={def.id} style={styles.upgradeRow}>
               <View style={styles.upgradeIconBox}>
@@ -94,7 +92,7 @@ export function PrestigeScreen({ state, onPrestige, onBuyStardustUpgrade, onAsce
               </View>
               <View style={styles.upgradeInfo}>
                 <View style={styles.upgradeTitleRow}>
-                  <Text style={styles.upgradeName}>{def.name}</Text>
+                  <Text style={styles.upgradeName}>{title}</Text>
                   {max > 1 && (
                     <View style={styles.pips}>
                       {Array.from({ length: max }, (_, i) => (
@@ -103,13 +101,15 @@ export function PrestigeScreen({ state, onPrestige, onBuyStardustUpgrade, onAsce
                     </View>
                   )}
                 </View>
-                <Text style={styles.upgradeDescription}>{def.description}</Text>
+                <Text style={styles.upgradeDescription}>{description('stardustUpgrade', def)}</Text>
               </View>
               <Pressable
                 onPress={() => onBuyStardustUpgrade(def.id)}
                 disabled={!affordable}
                 accessibilityRole="button"
-                accessibilityLabel={cost === null ? `${def.name} na maximu` : `Koupit ${def.name} za ${cost} prachu`}
+                accessibilityLabel={
+                  cost === null ? t('prestige.maxedLabel', { name: title }) : t('prestige.buyStardustLabel', { name: title, cost })
+                }
                 style={({ pressed }) => [
                   styles.upgradeBuy,
                   cost === null && styles.upgradeBuyMaxed,
@@ -117,23 +117,30 @@ export function PrestigeScreen({ state, onPrestige, onBuyStardustUpgrade, onAsce
                   pressed && affordable && styles.buttonPressed,
                 ]}
               >
-                <Text style={[styles.upgradeBuyText, cost === null && styles.upgradeBuyMaxedText, cost !== null && !affordable && styles.upgradeBuyDisabledText]}>
-                  {cost === null ? '✓ MAX' : `✨ ${cost}`}
+                <Text
+                  style={[
+                    styles.upgradeBuyText,
+                    cost === null && styles.upgradeBuyMaxedText,
+                    cost !== null && !affordable && styles.upgradeBuyDisabledText,
+                  ]}
+                >
+                  {cost === null ? t('prestige.maxed') : `✨ ${cost}`}
                 </Text>
               </Pressable>
             </View>
           );
         })}
 
-        <Text style={styles.sectionHeading}>🌌 Galaxie</Text>
-        <Text style={styles.sectionText}>
-          Za {formatNumber(GALAXY_COST)} neutraceného prachu založíš novou galaxii. Přijdeš o prach, běh i hvězdná vylepšení,
-          ale každá galaxie trvale násobí produkci ×{GALAXY_MULTIPLIER} a zvyšuje zisk prachu při prestiži o 100 %.
-        </Text>
+        <Text style={styles.sectionHeading}>{t('prestige.galaxyTitle')}</Text>
+        <Text style={styles.sectionText}>{t('prestige.galaxyIntro', { cost: formatNumber(GALAXY_COST), mult: GALAXY_MULTIPLIER })}</Text>
         <View style={styles.card}>
-          <Stat label="Galaxie" value={`🌌 ${state.galaxies}`} />
-          <Stat label="Bonus z galaxií" value={`×${formatNumber(galaxyMultiplier(state))}`} />
-          <Stat label="Prach k založení" value={`✨ ${formatWhole(state.stardust)} / ${formatNumber(GALAXY_COST)}`} highlight={galaxyReady} />
+          <Stat label={t('prestige.galaxies')} value={`🌌 ${state.galaxies}`} />
+          <Stat label={t('prestige.galaxyBonus')} value={`×${formatNumber(galaxyMultiplier(state))}`} />
+          <Stat
+            label={t('prestige.galaxyDust')}
+            value={`✨ ${formatWhole(state.stardust)} / ${formatNumber(GALAXY_COST)}`}
+            highlight={galaxyReady}
+          />
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, styles.galaxyFill, { width: `${galaxyProgress * 100}%` }]} />
           </View>
@@ -141,45 +148,45 @@ export function PrestigeScreen({ state, onPrestige, onBuyStardustUpgrade, onAsce
         <Pressable
           onPress={() => setConfirmingGalaxy(true)}
           disabled={!galaxyReady}
-          style={({ pressed }) => [styles.button, styles.galaxyButton, !galaxyReady && styles.buttonDisabled, pressed && galaxyReady && styles.buttonPressed]}
+          style={({ pressed }) => [
+            styles.button,
+            styles.galaxyButton,
+            !galaxyReady && styles.buttonDisabled,
+            pressed && galaxyReady && styles.buttonPressed,
+          ]}
           accessibilityRole="button"
         >
           <Text style={[styles.buttonText, styles.galaxyButtonText, !galaxyReady && styles.buttonTextDisabled]}>
-            {galaxyReady ? 'Založit novou galaxii' : `Potřebuješ ✨ ${formatNumber(GALAXY_COST)}`}
+            {galaxyReady ? t('prestige.galaxyButton') : t('prestige.galaxyNeed', { cost: formatNumber(GALAXY_COST) })}
           </Text>
         </Pressable>
       </ScrollView>
-      <ConfirmModal
-        visible={confirmingGalaxy}
-        icon="🌌"
-        title="Založit novou galaxii?"
-        message={
-          `Spotřebuješ ✨ ${formatWhole(state.stardust)} prachu a začneš úplně od začátku včetně hvězdných vylepšení. ` +
-          `Produkce bude navždy ×${GALAXY_MULTIPLIER} vyšší a prestiž dá o 100 % víc prachu. Úspěchy a nákupy zůstanou.`
-        }
-        confirmLabel="Založit galaxii"
-        destructive
-        onConfirm={() => {
-          setConfirmingGalaxy(false);
-          onAscendGalaxy();
-        }}
-        onCancel={() => setConfirmingGalaxy(false)}
-      />
+
       <ConfirmModal
         visible={confirming}
         icon="✨"
-        title="Vypustit hvězdný prach?"
-        message={
-          `Získáš ✨ ${gain} hvězdného prachu (+${gain * bonusPercent} % k produkci navždy). ` +
-          'Přijdeš o všechny krystaly, zařízení i vylepšení v tomto běhu. Nákupy z obchodu ti zůstanou.'
-        }
-        confirmLabel="Provést prestiž"
+        title={t('prestige.confirmTitle')}
+        message={t('prestige.confirmMessage', { gain, pct: gain * bonusPercent })}
+        confirmLabel={t('prestige.confirmLabel')}
         destructive
         onConfirm={() => {
           setConfirming(false);
           onPrestige();
         }}
         onCancel={() => setConfirming(false)}
+      />
+      <ConfirmModal
+        visible={confirmingGalaxy}
+        icon="🌌"
+        title={t('prestige.galaxyConfirmTitle')}
+        message={t('prestige.galaxyConfirmMessage', { dust: formatWhole(state.stardust), mult: GALAXY_MULTIPLIER })}
+        confirmLabel={t('prestige.galaxyConfirmLabel')}
+        destructive
+        onConfirm={() => {
+          setConfirmingGalaxy(false);
+          onAscendGalaxy();
+        }}
+        onCancel={() => setConfirmingGalaxy(false)}
       />
     </View>
   );
@@ -256,19 +263,19 @@ const styles = StyleSheet.create({
   galaxyFill: {
     backgroundColor: colors.accent,
   },
-  galaxyButton: {
-    backgroundColor: colors.accent,
-    marginBottom: spacing.md,
-  },
-  galaxyButtonText: {
-    color: colors.text,
-  },
   button: {
     backgroundColor: colors.gold,
     borderRadius: radius.pill,
     paddingVertical: spacing.lg,
     alignItems: 'center',
     marginTop: spacing.sm,
+  },
+  galaxyButton: {
+    backgroundColor: colors.accent,
+    marginBottom: spacing.md,
+  },
+  galaxyButtonText: {
+    color: colors.text,
   },
   buttonPressed: {
     opacity: 0.85,

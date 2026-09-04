@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BOOST_DURATION_SECONDS, BOOST_MULTIPLIER, boostCooldownRemainingMs, canWatchBoostAd, isBoostActive } from '../engine/ads';
 import { formatDuration } from '../engine/format';
 import { GameState } from '../engine/types';
+import { useT } from '../i18n';
 import { adProvider } from '../services/ads';
 import { colors, radius, spacing } from './theme';
 
@@ -14,13 +15,14 @@ interface Props {
 
 /** Karta pod krystalem: aktivní boost, nabídka videa, nebo odpočet do dalšího videa. */
 export function BoostCard({ state, now, onWatch }: Props) {
+  const { t } = useT();
   if (isBoostActive(state)) {
     return (
       <View style={[styles.card, styles.cardActive]}>
         <Text style={styles.icon}>⚡</Text>
         <View style={styles.info}>
-          <Text style={styles.title}>Boost ×{BOOST_MULTIPLIER} aktivní</Text>
-          <Text style={styles.text}>Zbývá {formatDuration(state.boostSecondsLeft)} herního času.</Text>
+          <Text style={styles.title}>{t('boost.active', { mult: BOOST_MULTIPLIER })}</Text>
+          <Text style={styles.text}>{t('boost.remaining', { duration: formatDuration(state.boostSecondsLeft) })}</Text>
         </View>
       </View>
     );
@@ -31,21 +33,21 @@ export function BoostCard({ state, now, onWatch }: Props) {
     <View style={styles.card}>
       <Text style={styles.icon}>📺</Text>
       <View style={styles.info}>
-        <Text style={styles.title}>
-          ×{BOOST_MULTIPLIER} produkce na {formatDuration(BOOST_DURATION_SECONDS)}
-        </Text>
+        <Text style={styles.title}>{t('boost.offer', { mult: BOOST_MULTIPLIER, duration: formatDuration(BOOST_DURATION_SECONDS) })}</Text>
         <Text style={styles.text}>
-          {available ? `Za shlédnutí videa. ${adProvider.isSandbox ? 'Testovací režim, video se jen simuluje.' : ''}` : `Další video za ${formatDuration(cooldown / 1000)}.`}
+          {available
+            ? `${t('boost.viaVideo')} ${adProvider.isSandbox ? t('boost.sandboxHint') : ''}`
+            : t('boost.next', { duration: formatDuration(cooldown / 1000) })}
         </Text>
       </View>
       <Pressable
         onPress={onWatch}
         disabled={!available}
         accessibilityRole="button"
-        accessibilityLabel="Sledovat video pro boost"
+        accessibilityLabel={t('boost.watchLabel')}
         style={({ pressed }) => [styles.button, !available && styles.buttonDisabled, pressed && available && styles.pressed]}
       >
-        <Text style={[styles.buttonText, !available && styles.buttonTextDisabled]}>▶ Video</Text>
+        <Text style={[styles.buttonText, !available && styles.buttonTextDisabled]}>{t('boost.video')}</Text>
       </Pressable>
     </View>
   );

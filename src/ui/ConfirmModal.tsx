@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useT } from '../i18n';
 import { colors, radius, spacing } from './theme';
 
 /**
@@ -27,7 +28,7 @@ export function ConfirmModal({
   title,
   message,
   confirmLabel,
-  cancelLabel = 'Zrušit',
+  cancelLabel,
   destructive,
   busy,
   note,
@@ -35,6 +36,7 @@ export function ConfirmModal({
   onConfirm,
   onCancel,
 }: Props) {
+  const { t } = useT();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={busy ? undefined : onCancel}>
       <View style={styles.backdrop}>
@@ -50,7 +52,7 @@ export function ConfirmModal({
               accessibilityRole="button"
               style={({ pressed }) => [styles.button, styles.cancel, pressed && styles.pressed]}
             >
-              <Text style={styles.cancelText}>{cancelLabel}</Text>
+              <Text style={styles.cancelText}>{cancelLabel ?? t('common.cancel')}</Text>
             </Pressable>
             <Pressable
               onPress={onConfirm}
@@ -62,11 +64,7 @@ export function ConfirmModal({
                 pressed && styles.pressed,
               ]}
             >
-              {busy ? (
-                <ActivityIndicator color={colors.text} />
-              ) : (
-                <Text style={styles.confirmText}>{confirmLabel}</Text>
-              )}
+              {busy ? <ActivityIndicator color={colors.text} /> : <Text style={styles.confirmText}>{confirmLabel}</Text>}
             </Pressable>
           </View>
         </View>

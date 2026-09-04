@@ -11,6 +11,7 @@ import {
   productionPerSecond,
 } from '../engine/engine';
 import { GameState } from '../engine/types';
+import { useT } from '../i18n';
 import { AmountSelector, BuyAmount } from './AmountSelector';
 import { BoostCard } from './BoostCard';
 import { ClickButton } from './ClickButton';
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export function MineScreen({ state, onTap, onBuy, onWatchBoostAd }: Props) {
+  const { t } = useT();
   const [amount, setAmount] = useState<BuyAmount>(1);
   const perSecond = productionPerSecond(state);
   const tapValue = clickValue(state);
@@ -62,7 +64,7 @@ export function MineScreen({ state, onTap, onBuy, onWatchBoostAd }: Props) {
             />
           );
         })}
-        <Text style={styles.footer}>Další zařízení se odemkne, jakmile koupíš to předchozí.</Text>
+        <Text style={styles.footer}>{t('generator.unlockHint')}</Text>
       </ScrollView>
     </View>
   );

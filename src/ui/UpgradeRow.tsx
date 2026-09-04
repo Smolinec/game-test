@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatNumber } from '../engine/format';
 import { UpgradeDef } from '../engine/types';
+import { useT } from '../i18n';
 import { colors, radius, spacing } from './theme';
 
 interface Props {
@@ -11,20 +12,22 @@ interface Props {
 }
 
 export const UpgradeRow = React.memo(function UpgradeRow({ def, affordable, onBuy }: Props) {
+  const { t, name, description } = useT();
+  const title = name('upgrade', def);
   return (
     <Pressable
       onPress={onBuy}
       disabled={!affordable}
       style={({ pressed }) => [styles.row, !affordable && styles.rowDisabled, pressed && affordable && styles.rowPressed]}
       accessibilityRole="button"
-      accessibilityLabel={`Koupit vylepšení ${def.name}`}
+      accessibilityLabel={t('upgrades.buyLabel', { name: title })}
     >
       <View style={styles.iconBox}>
         <Text style={styles.icon}>{def.icon}</Text>
       </View>
       <View style={styles.info}>
-        <Text style={styles.name}>{def.name}</Text>
-        <Text style={styles.description}>{def.description}</Text>
+        <Text style={styles.name}>{title}</Text>
+        <Text style={styles.description}>{description('upgrade', def)}</Text>
       </View>
       <View style={[styles.price, !affordable && styles.priceDisabled]}>
         <Text style={[styles.priceText, !affordable && styles.priceTextDisabled]}>💎 {formatNumber(def.cost)}</Text>

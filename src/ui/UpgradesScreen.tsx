@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { UPGRADES } from '../engine/data';
 import { availableUpgrades, productionPerSecond } from '../engine/engine';
 import { GameState } from '../engine/types';
+import { useT } from '../i18n';
 import { Header } from './Header';
 import { colors, spacing } from './theme';
 import { UpgradeRow } from './UpgradeRow';
@@ -13,19 +14,18 @@ interface Props {
 }
 
 export function UpgradesScreen({ state, onBuy }: Props) {
+  const { t } = useT();
   const available = availableUpgrades(state);
   return (
     <View style={styles.container}>
       <Header crystals={state.crystals} perSecond={productionPerSecond(state)} stardust={state.stardust} />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.heading}>Vylepšení</Text>
-        <Text style={styles.subheading}>
-          Zakoupeno {state.upgrades.length} z {UPGRADES.length}. Další se objeví, až budeš mít víc zařízení.
-        </Text>
+        <Text style={styles.heading}>{t('upgrades.title')}</Text>
+        <Text style={styles.subheading}>{t('upgrades.subtitle', { done: state.upgrades.length, total: UPGRADES.length })}</Text>
         {available.length === 0 && (
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>🔒</Text>
-            <Text style={styles.emptyText}>Zatím žádné dostupné vylepšení. Kup víc zařízení nebo těž dál!</Text>
+            <Text style={styles.emptyText}>{t('upgrades.empty')}</Text>
           </View>
         )}
         {available.map((def) => (

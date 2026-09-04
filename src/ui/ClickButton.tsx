@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatNumber } from '../engine/format';
+import { useSettings, useT } from '../i18n';
 import { colors, radius, spacing } from './theme';
 
 interface Props {
@@ -26,17 +27,27 @@ const FLOAT_DURATION_MS = 900;
 const FLOAT_RISE = 96;
 /** Volné místo nad krystalem, kam čísla stoupají, než vyblednou. */
 const HEADROOM = 44;
+const SIZE = 150;
+
+function formatGain(value: number): string {
+  return formatNumber(value, { decimals: value < 10 ? 1 : 0 });
+}
 
 export function ClickButton({ value, onTap }: Props) {
+  const { t } = useT();
+  const { settings } = useSettings();
   const scale = useRef(new Animated.Value(1)).current;
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const nextId = useRef(0);
 
   const handlePress = useCallback(() => {
     const result = onTap();
-    Haptics.impactAsync(result.golden ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Light).catch(
-      () => undefined,
-    );
+    if (settings.haptics) {
+      Haptics.impactAsync(result.golden ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Light).catch(
+        () => undefined,
+      );
+    }
+    if (!settings.animations) return;
 
     scale.stopAnimation();
     scale.setValue(0.92);
@@ -48,7 +59,7 @@ export function ClickButton({ value, onTap }: Props) {
       id,
       x: (Math.random() - 0.5) * 110,
       drift: (Math.random() - 0.5) * 40,
-      text: `${result.golden ? '🌟 ' : ''}+${formatNumber(result.gained, { decimals: result.gained < 10 ? 1 : 0 })}`,
+      text: `${result.golden ? '🌟 ' : ''}+${formatGain(result.gained)}`,
       golden: result.golden,
       anim,
     };
@@ -59,7 +70,7 @@ export function ClickButton({ value, onTap }: Props) {
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start(() => setFloaters((list) => list.filter((f) => f.id !== id)));
-  }, [onTap, scale]);
+  }, [onTap, scale, settings.animations, settings.haptics]);
 
   return (
     <View style={styles.wrapper}>
@@ -84,18 +95,16 @@ export function ClickButton({ value, onTap }: Props) {
           </Animated.Text>
         ))}
       </View>
-      <Pressable onPress={handlePress} accessibilityRole="button" accessibilityLabel="Těžit krystaly">
+      <Pressable onPress={handlePress} accessibilityRole="button" accessibilityLabel={t('tap.label')}>
         <Animated.View style={[styles.button, { transform: [{ scale }] }]}>
           <Text style={styles.icon}>💎</Text>
-          <Text style={styles.caption}>TĚŽIT</Text>
+          <Text style={styles.caption}>{t('tap.button')}</Text>
         </Animated.View>
       </Pressable>
-      <Text style={styles.hint}>+{formatNumber(value, { decimals: value < 10 ? 1 : 0 })} za klepnutí</Text>
+      <Text style={styles.hint}>{t('tap.perTap', { value: formatGain(value) })}</Text>
     </View>
   );
 }
-
-const SIZE = 150;
 
 const styles = StyleSheet.create({
   wrapper: {

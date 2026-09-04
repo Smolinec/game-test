@@ -25,6 +25,8 @@ a přes prestiž získáváš hvězdný prach s trvalým bonusem.
 - **Obchod v testovacím režimu** – balíčky hvězdného prachu, časový skok a trvalé nároky (Dvojitý výkon,
   Noční směna). Nákupy se zatím jen simulují, efekt se ale ve hře projeví.
 - **Účet (již brzy)** – tlačítka pro přihlášení přes Apple a Google jsou připravená, ale zatím nejsou napojená.
+- **Nastavení** – jazyk (čeština / angličtina podle jazyka zařízení), vibrace, animace, zvuky. Texty rozhraní
+  jsou v `src/i18n/strings.ts`, anglické názvy herních dat v `src/i18n/data.ts`.
 - **Statistiky** a možnost smazat postup.
 
 ## Spuštění
@@ -102,6 +104,7 @@ src/services/ads.ts     vrstva pro reklamy; dnes MockRewardedAdProvider, pozděj
   signing.ts            podpis uložení (SHA-256 v čistém JS)
   shop.ts               definice placených položek a aplikace jejich efektu
 src/services/purchases.ts vrstva pro nákupy; dnes MockPurchaseProvider, později RevenueCat
+src/i18n/               překlady (cs/en), nastavení a jejich ukládání
 src/hooks/useGame.ts    herní smyčka (tick 100 ms), autosave, offline detekce, nákupy
 src/ui/                 obrazovky a komponenty (Těžba, Vylepšení, Prestiž, Info)
 tools/make-icons.js     generátor ikon

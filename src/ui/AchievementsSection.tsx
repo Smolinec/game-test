@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { ACHIEVEMENT_BONUS, ACHIEVEMENTS, achievementProgress, hasAchievement, metricValue } from '../engine/achievements';
 import { formatDuration, formatNumber } from '../engine/format';
 import { GameState } from '../engine/types';
+import { useT } from '../i18n';
 import { colors, radius, spacing } from './theme';
 
 interface Props {
@@ -10,13 +11,14 @@ interface Props {
 }
 
 export function AchievementsSection({ state }: Props) {
+  const { t, name, description } = useT();
   const done = state.achievements.length;
   return (
     <View>
       <View style={styles.headerRow}>
-        <Text style={styles.heading}>🏆 Úspěchy</Text>
+        <Text style={styles.heading}>{t('achievements.title')}</Text>
         <Text style={styles.counter}>
-          {done} / {ACHIEVEMENTS.length} · +{Math.round(done * ACHIEVEMENT_BONUS * 100)} % produkce
+          {t('achievements.counter', { done, total: ACHIEVEMENTS.length, pct: Math.round(done * ACHIEVEMENT_BONUS * 100) })}
         </Text>
       </View>
       <View style={styles.list}>
@@ -34,8 +36,8 @@ export function AchievementsSection({ state }: Props) {
                 <Text style={[styles.icon, !unlocked && styles.iconLocked]}>{unlocked ? def.icon : '🔒'}</Text>
               </View>
               <View style={styles.info}>
-                <Text style={[styles.name, !unlocked && styles.nameLocked]}>{def.name}</Text>
-                <Text style={styles.description}>{def.description}</Text>
+                <Text style={[styles.name, !unlocked && styles.nameLocked]}>{name('achievement', def)}</Text>
+                <Text style={styles.description}>{description('achievement', def)}</Text>
                 {!unlocked && (
                   <View style={styles.progressRow}>
                     <View style={styles.track}>

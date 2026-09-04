@@ -3,10 +3,12 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { clickValue, offlineCapSeconds, offlineEfficiency, productionPerSecond } from '../engine/engine';
 import { formatDuration, formatNumber, formatWhole } from '../engine/format';
 import { GameState } from '../engine/types';
+import { useT } from '../i18n';
 import { AccountCard } from './AccountCard';
 import { AchievementsSection } from './AchievementsSection';
 import { ConfirmModal } from './ConfirmModal';
 import { Header } from './Header';
+import { SettingsSection } from './SettingsSection';
 import { colors, radius, spacing } from './theme';
 
 interface Props {
@@ -15,8 +17,8 @@ interface Props {
 }
 
 export function StatsScreen({ state, onReset }: Props) {
+  const { t } = useT();
   const totalGenerators = Object.values(state.generators).reduce((a, b) => a + b, 0);
-
   const [confirmingReset, setConfirmingReset] = useState(false);
 
   return (
@@ -26,35 +28,41 @@ export function StatsScreen({ state, onReset }: Props) {
         <View style={styles.accountWrap}>
           <AccountCard />
         </View>
-        <Text style={styles.heading}>📊 Statistiky</Text>
+
+        <SettingsSection />
+
+        <Text style={styles.heading}>{t('stats.title')}</Text>
         <View style={styles.card}>
-          <Stat label="Krystaly celkem" value={`💎 ${formatWhole(state.allTimeCrystals)}`} />
-          <Stat label="Krystaly v tomto běhu" value={`💎 ${formatWhole(state.runCrystals)}`} />
-          <Stat label="Produkce" value={`${formatNumber(productionPerSecond(state), { decimals: 1 })} / s`} />
-          <Stat label="Hodnota klepnutí" value={`💎 ${formatNumber(clickValue(state), { decimals: 1 })}`} />
-          <Stat label="Počet klepnutí" value={formatWhole(state.clicks)} />
-          <Stat label="Zařízení celkem" value={formatWhole(totalGenerators)} />
-          <Stat label="Zakoupená vylepšení" value={String(state.upgrades.length)} />
-          <Stat label="Hvězdný prach (získáno)" value={`✨ ${formatWhole(state.stardustEarned)}`} />
-          <Stat label="Galaxie" value={`🌌 ${state.galaxies}`} />
-          <Stat label="Nákupy z obchodu" value={String(state.entitlements.length)} />
-          <Stat label="Shlédnutá videa" value={String(state.adsWatched)} />
-          <Stat label="Odehráno" value={formatDuration(state.playTimeSeconds)} />
+          <Stat label={t('stats.crystalsTotal')} value={`💎 ${formatWhole(state.allTimeCrystals)}`} />
+          <Stat label={t('stats.crystalsRun')} value={`💎 ${formatWhole(state.runCrystals)}`} />
+          <Stat
+            label={t('stats.production')}
+            value={t('header.perSecond', { rate: formatNumber(productionPerSecond(state), { decimals: 1 }) })}
+          />
+          <Stat label={t('stats.tapValue')} value={`💎 ${formatNumber(clickValue(state), { decimals: 1 })}`} />
+          <Stat label={t('stats.taps')} value={formatWhole(state.clicks)} />
+          <Stat label={t('stats.devices')} value={formatWhole(totalGenerators)} />
+          <Stat label={t('stats.upgradesBought')} value={String(state.upgrades.length)} />
+          <Stat label={t('stats.stardustEarned')} value={`✨ ${formatWhole(state.stardustEarned)}`} />
+          <Stat label={t('stats.galaxies')} value={`🌌 ${state.galaxies}`} />
+          <Stat label={t('stats.purchases')} value={String(state.entitlements.length)} />
+          <Stat label={t('stats.adsWatched')} value={String(state.adsWatched)} />
+          <Stat label={t('stats.played')} value={formatDuration(state.playTimeSeconds)} />
         </View>
 
         <AchievementsSection state={state} />
 
-        <Text style={styles.heading}>ℹ️ Jak to funguje</Text>
+        <Text style={styles.heading}>{t('stats.howTitle')}</Text>
         <View style={styles.card}>
+          <Text style={styles.info}>{t('stats.how1')}</Text>
           <Text style={styles.info}>
-            • Klepáním na krystal těžíš ručně. Zařízení těží samy, i když hru nemáš otevřenou.
+            {t('stats.how2', {
+              pct: Math.round(offlineEfficiency(state) * 100),
+              duration: formatDuration(offlineCapSeconds(state)),
+            })}
           </Text>
-          <Text style={styles.info}>
-            • Offline těžba běží na {Math.round(offlineEfficiency(state) * 100)} % výkonu a počítá se nejvýše{' '}
-            {formatDuration(offlineCapSeconds(state))}.
-          </Text>
-          <Text style={styles.info}>• Hra se ukládá automaticky každých pár sekund a při zavření aplikace.</Text>
-          <Text style={styles.info}>• Prestiž ti dá trvalý bonus výměnou za restart běhu.</Text>
+          <Text style={styles.info}>{t('stats.how3')}</Text>
+          <Text style={styles.info}>{t('stats.how4')}</Text>
         </View>
 
         <Pressable
@@ -62,15 +70,15 @@ export function StatsScreen({ state, onReset }: Props) {
           accessibilityRole="button"
           style={({ pressed }) => [styles.resetButton, pressed && styles.resetPressed]}
         >
-          <Text style={styles.resetText}>Smazat postup</Text>
+          <Text style={styles.resetText}>{t('stats.reset')}</Text>
         </Pressable>
       </ScrollView>
       <ConfirmModal
         visible={confirmingReset}
         icon="🗑️"
-        title="Smazat celý postup?"
-        message="Tohle smaže úplně všechno včetně hvězdného prachu a nákupů. Nejde to vrátit."
-        confirmLabel="Smazat"
+        title={t('stats.resetTitle')}
+        message={t('stats.resetMessage')}
+        confirmLabel={t('stats.resetLabel')}
         destructive
         onConfirm={() => {
           setConfirmingReset(false);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useT } from '../i18n';
 import { colors, radius, spacing } from './theme';
 
 export type BuyAmount = 1 | 10 | 100 | 'max';
@@ -12,9 +13,10 @@ interface Props {
 }
 
 export function AmountSelector({ value, onChange }: Props) {
+  const { t } = useT();
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Koupit</Text>
+      <Text style={styles.label}>{t('buy.label')}</Text>
       <View style={styles.group}>
         {BUY_AMOUNTS.map((amount) => {
           const active = amount === value;
@@ -27,7 +29,7 @@ export function AmountSelector({ value, onChange }: Props) {
               accessibilityState={{ selected: active }}
             >
               <Text style={[styles.pillText, active && styles.pillTextActive]}>
-                {amount === 'max' ? 'MAX' : `×${amount}`}
+                {amount === 'max' ? t('buy.max') : `×${amount}`}
               </Text>
             </Pressable>
           );

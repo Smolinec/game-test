@@ -5,6 +5,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { dailyStatus, localDayNumber } from './src/engine/daily';
 import { availableUpgrades, canPrestige } from './src/engine/engine';
 import { useGame } from './src/hooks/useGame';
+import { SettingsProvider, useSettings, useT } from './src/i18n';
 import { AchievementToast } from './src/ui/AchievementToast';
 import { DailyRewardModal } from './src/ui/DailyRewardModal';
 import { MineScreen } from './src/ui/MineScreen';
@@ -20,13 +21,17 @@ import { UpgradesScreen } from './src/ui/UpgradesScreen';
 export default function App() {
   return (
     <SafeAreaProvider>
-      <Game />
+      <SettingsProvider>
+        <Game />
+      </SettingsProvider>
     </SafeAreaProvider>
   );
 }
 
 function Game() {
   const { state, offline, unlockedAchievements, adPlaying, actions } = useGame();
+  const { ready: settingsReady } = useSettings();
+  const { t } = useT();
   const [tab, setTab] = useState<Tab>('mine');
   // Den, pro který hráč odložil denní odměnu tlačítkem „Později“.
   const [dailyPostponedDay, setDailyPostponedDay] = useState<number | null>(null);
@@ -39,18 +44,18 @@ function Game() {
   );
 
   const tabs: TabItem[] = [
-    { key: 'mine', label: 'Těžba', icon: '💎' },
-    { key: 'upgrades', label: 'Vylepšení', icon: '⬆️', badge: affordableUpgrades },
-    { key: 'prestige', label: 'Prestiž', icon: '✨', badge: state && canPrestige(state) ? 1 : 0 },
-    { key: 'shop', label: 'Obchod', icon: '🛒' },
-    { key: 'stats', label: 'Info', icon: '📊' },
+    { key: 'mine', label: t('tabs.mine'), icon: '💎' },
+    { key: 'upgrades', label: t('tabs.upgrades'), icon: '⬆️', badge: affordableUpgrades },
+    { key: 'prestige', label: t('tabs.prestige'), icon: '✨', badge: state && canPrestige(state) ? 1 : 0 },
+    { key: 'shop', label: t('tabs.shop'), icon: '🛒' },
+    { key: 'stats', label: t('tabs.info'), icon: '📊' },
   ];
 
-  if (!state) {
+  if (!state || !settingsReady) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator color={colors.accent} size="large" />
-        <Text style={styles.loadingText}>Načítám kolonii…</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
         <StatusBar style="light" />
       </View>
     );
@@ -78,8 +83,8 @@ function Game() {
       <TabBar tabs={tabs} active={tab} onChange={setTab} />
       <AchievementToast achievement={unlockedAchievements[0] ?? null} onDone={actions.dismissAchievement} />
       <OfflineModal result={offline} onClose={actions.dismissOffline} onDouble={() => void actions.watchAd('double_offline')} />
-      <MockAdOverlay visible={adPlaying !== null} />
       <DailyRewardModal status={daily} onClaim={actions.claimDaily} onLater={() => setDailyPostponedDay(localDayNumber(Date.now()))} />
+      <MockAdOverlay visible={adPlaying !== null} />
     </SafeAreaView>
   );
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatDuration, formatWhole } from '../engine/format';
 import { OfflineResult } from '../engine/types';
+import { useT } from '../i18n';
 import { adProvider } from '../services/ads';
 import { colors, radius, spacing } from './theme';
 
@@ -12,25 +13,23 @@ interface Props {
 }
 
 export function OfflineModal({ result, onClose, onDouble }: Props) {
+  const { t } = useT();
   const capped = !!result && result.elapsedSeconds > result.seconds;
   return (
     <Modal visible={!!result} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>Vítej zpět! 👋</Text>
+          <Text style={styles.title}>{t('offline.title')}</Text>
           {result && (
             <>
-              <Text style={styles.text}>
-                Byl jsi pryč <Text style={styles.strong}>{formatDuration(result.elapsedSeconds)}</Text>. Tvoje
-                kolonie mezitím vytěžila
-              </Text>
+              <Text style={styles.text}>{t('offline.text', { duration: formatDuration(result.elapsedSeconds) })}</Text>
               <Text style={styles.amount}>
                 💎 {formatWhole(result.earned)}
                 {result.doubled ? '  ×2' : ''}
               </Text>
               <Text style={styles.note}>
-                Offline těžba běží na {Math.round(result.efficiency * 100)} % výkonu
-                {capped && result ? ` a započítá se nejvýše ${formatDuration(result.capSeconds)}.` : '.'}
+                {t('offline.note', { pct: Math.round(result.efficiency * 100) })}
+                {capped ? t('offline.capped', { duration: formatDuration(result.capSeconds) }) : '.'}
               </Text>
             </>
           )}
@@ -38,10 +37,10 @@ export function OfflineModal({ result, onClose, onDouble }: Props) {
             <Pressable
               onPress={onDouble}
               accessibilityRole="button"
-              accessibilityLabel="Sledovat video a zdvojnásobit"
+              accessibilityLabel={t('offline.doubleLabel')}
               style={({ pressed }) => [styles.button, styles.doubleButton, pressed && styles.buttonPressed]}
             >
-              <Text style={styles.doubleText}>📺 Video: zdvojnásobit</Text>
+              <Text style={styles.doubleText}>{t('offline.double')}</Text>
             </Pressable>
           )}
           <Pressable
@@ -49,7 +48,7 @@ export function OfflineModal({ result, onClose, onDouble }: Props) {
             accessibilityRole="button"
             style={({ pressed }) => [styles.button, result?.doubled && styles.buttonGold, pressed && styles.buttonPressed]}
           >
-            <Text style={styles.buttonText}>{result?.doubled ? 'Vybrat dvojnásobek' : 'Vybrat'}</Text>
+            <Text style={styles.buttonText}>{result?.doubled ? t('offline.claimDoubled') : t('offline.claim')}</Text>
           </Pressable>
         </View>
       </View>
@@ -85,10 +84,6 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 15,
     textAlign: 'center',
-  },
-  strong: {
-    color: colors.text,
-    fontWeight: '700',
   },
   amount: {
     color: colors.gold,
