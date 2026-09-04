@@ -66,15 +66,16 @@ Další příkazy:
   na Pages. V nastavení repozitáře (Settings → Pages) je potřeba jednou zvolit zdroj **GitHub Actions**.
   Hra pak poběží na `https://<uživatel>.github.io/game-test/`.
 
-## Sestavení do obchodů
+## Sestavení na telefon a do obchodů
 
-Nejjednodušší cesta je [EAS Build](https://docs.expo.dev/build/introduction/):
+Profily pro [EAS Build](https://docs.expo.dev/build/introduction/) jsou v `eas.json` (`development`,
+`preview`, `production`). Podrobný postup včetně toho, co je potřeba založit a co ověřit na skutečném
+zařízení, je v [docs/BUILD.md](docs/BUILD.md). Ve zkratce:
 
 ```bash
-npm install -g eas-cli
-eas login
-eas build --platform android   # .aab pro Google Play (nebo --profile preview pro .apk)
-eas build --platform ios       # .ipa pro App Store (vyžaduje Apple Developer účet)
+npm install -g eas-cli && eas login && eas init
+eas build --profile development --platform android   # dev build s nativními moduly
+eas build --profile production --platform all        # build do obchodů
 ```
 
 Identifikátory aplikace jsou v `app.json` (`ios.bundleIdentifier`, `android.package`) – před publikováním
