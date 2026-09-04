@@ -14,6 +14,9 @@ a přes prestiž získáváš hvězdný prach s trvalým bonusem.
 - **Prestiž** – hvězdný prach = ⌊√(krystaly v běhu / 10 M)⌋, každý kus +10 % k produkci navždy.
 - **Offline postup** – po návratu dostaneš 50 % produkce za dobu nepřítomnosti, max 8 h, s přehledným dialogem.
 - **Automatické ukládání** – každých 10 s a při přechodu aplikace do pozadí (AsyncStorage).
+- **Obchod v testovacím režimu** – balíčky hvězdného prachu, časový skok a trvalé nároky (Dvojitý výkon,
+  Noční směna). Nákupy se zatím jen simulují, efekt se ale ve hře projeví.
+- **Účet (již brzy)** – tlačítka pro přihlášení přes Apple a Google jsou připravená, ale zatím nejsou napojená.
 - **Statistiky** a možnost smazat postup.
 
 ## Spuštění
@@ -82,12 +85,25 @@ src/engine/             čistý TypeScript bez React Native – testovatelné j�
   format.ts             formátování čísel (1,5K, 2,3M…) a času
   save.ts               serializace a bezpečné načtení uložených dat
   storage.ts            napojení na AsyncStorage
-src/hooks/useGame.ts    herní smyčka (tick 100 ms), autosave, offline detekce
+  shop.ts               definice placených položek a aplikace jejich efektu
+src/services/purchases.ts vrstva pro nákupy; dnes MockPurchaseProvider, později RevenueCat
+src/hooks/useGame.ts    herní smyčka (tick 100 ms), autosave, offline detekce, nákupy
 src/ui/                 obrazovky a komponenty (Těžba, Vylepšení, Prestiž, Info)
 tools/make-icons.js     generátor ikon
 .github/workflows/      nasazení webové verze na GitHub Pages
 __tests__/              Jest testy enginu
 ```
+
+## Napojení plateb a přihlášení
+
+- **Nákupy:** `src/services/purchases.ts` exportuje `purchaseProvider`. Dnes je to `MockPurchaseProvider`
+  (nic se neúčtuje, obchod to hlásí). Skutečný poskytovatel (např. RevenueCat) implementuje stejné rozhraní
+  `PurchaseProvider`; UI ani engine se nemění. Id produktů v `src/engine/shop.ts` musí odpovídat id
+  v App Store Connect a Google Play Console.
+- **Trvalé nároky** se drží v `state.entitlements`, přežijí prestiž a po napojení se mají obnovovat z obchodu
+  (`restore()`), ne jen z lokálního uložení.
+- **Přihlášení:** blok Účet v záložce Info (`src/ui/AccountCard.tsx`) je zatím jen vizuální. Po založení účtů
+  se napojí na Firebase Auth (Apple + Google) a synchronizaci uložení.
 
 ## Ladění balancu
 

@@ -7,6 +7,7 @@ import { useGame } from './src/hooks/useGame';
 import { MineScreen } from './src/ui/MineScreen';
 import { OfflineModal } from './src/ui/OfflineModal';
 import { PrestigeScreen } from './src/ui/PrestigeScreen';
+import { ShopScreen } from './src/ui/ShopScreen';
 import { StatsScreen } from './src/ui/StatsScreen';
 import { Tab, TabBar, TabItem } from './src/ui/TabBar';
 import { colors } from './src/ui/theme';
@@ -33,6 +34,7 @@ function Game() {
     { key: 'mine', label: 'Těžba', icon: '💎' },
     { key: 'upgrades', label: 'Vylepšení', icon: '⬆️', badge: affordableUpgrades },
     { key: 'prestige', label: 'Prestiž', icon: '✨', badge: state && canPrestige(state) ? 1 : 0 },
+    { key: 'shop', label: 'Obchod', icon: '🛒' },
     { key: 'stats', label: 'Info', icon: '📊' },
   ];
 
@@ -53,6 +55,7 @@ function Game() {
         {tab === 'mine' && <MineScreen state={state} onTap={actions.tap} onBuy={actions.buy} />}
         {tab === 'upgrades' && <UpgradesScreen state={state} onBuy={actions.purchaseUpgrade} />}
         {tab === 'prestige' && <PrestigeScreen state={state} onPrestige={actions.doPrestige} />}
+        {tab === 'shop' && <ShopScreen state={state} onPurchase={actions.purchase} />}
         {tab === 'stats' && <StatsScreen state={state} onReset={() => void actions.resetGame()} />}
       </View>
       <TabBar tabs={tabs} active={tab} onChange={setTab} />

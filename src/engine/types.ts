@@ -51,6 +51,8 @@ export interface GameState {
   generators: Record<string, number>;
   /** Id zakoupených vylepšení. */
   upgrades: string[];
+  /** Trvalé nároky z obchodu (přežijí prestiž). */
+  entitlements: string[];
   /** Hvězdný prach – prestižní měna. */
   stardust: number;
   prestigeCount: number;
@@ -67,5 +69,7 @@ export interface OfflineResult {
   seconds: number;
   /** Kolik sekund uplynulo doopravdy. */
   elapsedSeconds: number;
+  /** Strop offline času, který pro hráče platil. */
+  capSeconds: number;
   earned: number;
 }

@@ -1,9 +1,10 @@
-import React from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PRESTIGE_BASE, STARDUST_BONUS } from '../engine/data';
 import { canPrestige, crystalsForNextStardust, prestigeGain, productionPerSecond, stardustMultiplier } from '../engine/engine';
 import { formatNumber, formatWhole } from '../engine/format';
 import { GameState } from '../engine/types';
+import { ConfirmModal } from './ConfirmModal';
 import { Header } from './Header';
 import { colors, radius, spacing } from './theme';
 
@@ -19,18 +20,7 @@ export function PrestigeScreen({ state, onPrestige }: Props) {
   const prevAt = gain * gain * PRESTIGE_BASE;
   const progress = Math.min(1, Math.max(0, (state.runCrystals - prevAt) / (nextAt - prevAt)));
   const bonusPercent = Math.round(STARDUST_BONUS * 100);
-
-  const confirm = () => {
-    Alert.alert(
-      'Vypustit hvězdný prach?',
-      `Získáš ✨ ${gain} hvězdného prachu (+${gain * bonusPercent} % k produkci navždy). ` +
-        'Přijdeš o všechny krystaly, zařízení i vylepšení v tomto běhu.',
-      [
-        { text: 'Zrušit', style: 'cancel' },
-        { text: 'Provést prestiž', style: 'destructive', onPress: onPrestige },
-      ],
-    );
-  };
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -58,7 +48,7 @@ export function PrestigeScreen({ state, onPrestige }: Props) {
         </View>
 
         <Pressable
-          onPress={confirm}
+          onPress={() => setConfirming(true)}
           disabled={!enabled}
           style={({ pressed }) => [styles.button, !enabled && styles.buttonDisabled, pressed && enabled && styles.buttonPressed]}
           accessibilityRole="button"
@@ -68,6 +58,22 @@ export function PrestigeScreen({ state, onPrestige }: Props) {
           </Text>
         </Pressable>
       </ScrollView>
+      <ConfirmModal
+        visible={confirming}
+        icon="✨"
+        title="Vypustit hvězdný prach?"
+        message={
+          `Získáš ✨ ${gain} hvězdného prachu (+${gain * bonusPercent} % k produkci navždy). ` +
+          'Přijdeš o všechny krystaly, zařízení i vylepšení v tomto běhu. Nákupy z obchodu ti zůstanou.'
+        }
+        confirmLabel="Provést prestiž"
+        destructive
+        onConfirm={() => {
+          setConfirming(false);
+          onPrestige();
+        }}
+        onCancel={() => setConfirming(false)}
+      />
     </View>
   );
 }

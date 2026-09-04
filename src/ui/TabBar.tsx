@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing } from './theme';
 
-export type Tab = 'mine' | 'upgrades' | 'prestige' | 'stats';
+export type Tab = 'mine' | 'upgrades' | 'prestige' | 'shop' | 'stats';
 
 export interface TabItem {
   key: Tab;

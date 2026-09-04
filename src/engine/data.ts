@@ -2,6 +2,14 @@ import { GeneratorDef, UpgradeDef } from './types';
 
 /** Kolik sekund offline produkce se maximálně započítá. */
 export const OFFLINE_CAP_SECONDS = 8 * 60 * 60;
+/** Strop offline produkce s nárokem „Noční směna“ z obchodu. */
+export const OFFLINE_CAP_PREMIUM_SECONDS = 24 * 60 * 60;
+/** Násobitel produkce s nárokem „Dvojitý výkon“ z obchodu. */
+export const PREMIUM_BOOST_MULTIPLIER = 2;
+
+/** Id trvalých nároků z obchodu, na které engine reaguje. */
+export const ENTITLEMENT_BOOST = 'boost_x2';
+export const ENTITLEMENT_OFFLINE = 'offline_24h';
 /** Účinnost offline produkce (0–1). */
 export const OFFLINE_EFFICIENCY = 0.5;
 /** Kolik krystalů z běhu je potřeba na první hvězdný prach. */

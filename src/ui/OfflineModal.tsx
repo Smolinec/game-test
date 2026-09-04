@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { OFFLINE_CAP_SECONDS, OFFLINE_EFFICIENCY } from '../engine/data';
+import { OFFLINE_EFFICIENCY } from '../engine/data';
 import { formatDuration, formatWhole } from '../engine/format';
 import { OfflineResult } from '../engine/types';
 import { colors, radius, spacing } from './theme';
@@ -26,7 +26,7 @@ export function OfflineModal({ result, onClose }: Props) {
               <Text style={styles.amount}>💎 {formatWhole(result.earned)}</Text>
               <Text style={styles.note}>
                 Offline těžba běží na {Math.round(OFFLINE_EFFICIENCY * 100)} % výkonu
-                {capped ? ` a započítá se nejvýše ${formatDuration(OFFLINE_CAP_SECONDS)}.` : '.'}
+                {capped && result ? ` a započítá se nejvýše ${formatDuration(result.capSeconds)}.` : '.'}
               </Text>
             </>
           )}

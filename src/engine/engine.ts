@@ -1,8 +1,12 @@
 import {
+  ENTITLEMENT_BOOST,
+  ENTITLEMENT_OFFLINE,
   GENERATORS,
   GENERATOR_BY_ID,
+  OFFLINE_CAP_PREMIUM_SECONDS,
   OFFLINE_CAP_SECONDS,
   OFFLINE_EFFICIENCY,
+  PREMIUM_BOOST_MULTIPLIER,
   PRESTIGE_BASE,
   STARDUST_BONUS,
   UPGRADES,
@@ -20,6 +24,7 @@ export function createInitialState(now: number = Date.now()): GameState {
     allTimeCrystals: 0,
     generators: {},
     upgrades: [],
+    entitlements: [],
     stardust: 0,
     prestigeCount: 0,
     clicks: 0,
@@ -41,6 +46,15 @@ export function hasUpgrade(state: GameState, upgradeId: string): boolean {
   return state.upgrades.includes(upgradeId);
 }
 
+export function hasEntitlement(state: GameState, entitlementId: string): boolean {
+  return state.entitlements.includes(entitlementId);
+}
+
+/** Strop offline času podle nároků hráče. */
+export function offlineCapSeconds(state: GameState): number {
+  return hasEntitlement(state, ENTITLEMENT_OFFLINE) ? OFFLINE_CAP_PREMIUM_SECONDS : OFFLINE_CAP_SECONDS;
+}
+
 function ownedUpgrades(state: GameState): UpgradeDef[] {
   return state.upgrades.map((id) => UPGRADE_BY_ID[id]).filter((u): u is UpgradeDef => !!u);
 }
@@ -50,9 +64,10 @@ export function stardustMultiplier(state: GameState): number {
   return 1 + state.stardust * STARDUST_BONUS;
 }
 
-/** Globální násobitel (vylepšení + prestiž). */
+/** Globální násobitel (vylepšení + prestiž + nároky z obchodu). */
 export function globalMultiplier(state: GameState): number {
   let mult = stardustMultiplier(state);
+  if (hasEntitlement(state, ENTITLEMENT_BOOST)) mult *= PREMIUM_BOOST_MULTIPLIER;
   for (const u of ownedUpgrades(state)) {
     if (u.effect.type === 'global') mult *= u.effect.multiplier;
   }
@@ -135,7 +150,7 @@ export function maxAffordable(state: GameState, generatorId: string): number {
 // Přechody stavu – všechny funkce vrací nový stav, původní nemění.
 // ---------------------------------------------------------------------------
 
-function addCrystals(state: GameState, amount: number): GameState {
+export function addCrystals(state: GameState, amount: number): GameState {
   if (amount <= 0) return state;
   return {
     ...state,
@@ -229,6 +244,7 @@ export function prestige(state: GameState, now: number = Date.now()): GameState 
   return {
     ...createInitialState(now),
     allTimeCrystals: state.allTimeCrystals,
+    entitlements: state.entitlements,
     stardust: state.stardust + gain,
     prestigeCount: state.prestigeCount + 1,
     clicks: state.clicks,
@@ -243,12 +259,14 @@ export function prestige(state: GameState, now: number = Date.now()): GameState 
 
 export function applyOfflineProgress(state: GameState, now: number = Date.now()): OfflineResult {
   const elapsedSeconds = Math.max(0, (now - state.lastSeenAt) / 1000);
-  const seconds = Math.min(elapsedSeconds, OFFLINE_CAP_SECONDS);
+  const capSeconds = offlineCapSeconds(state);
+  const seconds = Math.min(elapsedSeconds, capSeconds);
   const earned = productionPerSecond(state) * seconds * OFFLINE_EFFICIENCY;
   return {
     state: { ...addCrystals(state, earned), lastSeenAt: now },
     seconds,
     elapsedSeconds,
+    capSeconds,
     earned,
   };
 }

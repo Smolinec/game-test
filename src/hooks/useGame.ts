@@ -9,8 +9,10 @@ import {
   prestige,
   tick,
 } from '../engine/engine';
+import { applyPurchase } from '../engine/shop';
 import { clearGame, loadGame, saveGame } from '../engine/storage';
 import { GameState, OfflineResult } from '../engine/types';
+import { purchaseProvider, PurchaseOutcome } from '../services/purchases';
 
 /** Jak často se počítá herní tick (ms). */
 const TICK_MS = 100;
@@ -26,6 +28,8 @@ export interface GameActions {
   buy: (generatorId: string, count: number) => void;
   purchaseUpgrade: (upgradeId: string) => void;
   doPrestige: () => void;
+  /** Provede nákup přes aktuálního poskytovatele a při úspěchu aplikuje efekt. */
+  purchase: (productId: string) => Promise<PurchaseOutcome>;
   resetGame: () => Promise<void>;
   dismissOffline: () => void;
 }
@@ -123,6 +127,23 @@ export function useGame(): GameHook {
     update((s) => prestige(s, Date.now()));
     if (stateRef.current) void saveGame(stateRef.current);
   }, [update]);
+  const purchase = useCallback(
+    async (productId: string): Promise<PurchaseOutcome> => {
+      let outcome: PurchaseOutcome;
+      try {
+        outcome = await purchaseProvider.purchase(productId);
+      } catch (error) {
+        console.warn('Nákup selhal', error);
+        outcome = 'error';
+      }
+      if (outcome === 'success') {
+        update((s) => applyPurchase(s, productId));
+        if (stateRef.current) void saveGame(stateRef.current);
+      }
+      return outcome;
+    },
+    [update],
+  );
   const resetGame = useCallback(async () => {
     await clearGame();
     const fresh = createInitialState(Date.now());
@@ -135,6 +156,6 @@ export function useGame(): GameHook {
   return {
     state,
     offline,
-    actions: { tap, buy, purchaseUpgrade, doPrestige, resetGame, dismissOffline },
+    actions: { tap, buy, purchaseUpgrade, doPrestige, purchase, resetGame, dismissOffline },
   };
 }

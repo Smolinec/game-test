@@ -1,9 +1,11 @@
-import React from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { OFFLINE_CAP_SECONDS, OFFLINE_EFFICIENCY } from '../engine/data';
-import { clickValue, productionPerSecond } from '../engine/engine';
+import React, { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { OFFLINE_EFFICIENCY } from '../engine/data';
+import { clickValue, offlineCapSeconds, productionPerSecond } from '../engine/engine';
 import { formatDuration, formatNumber, formatWhole } from '../engine/format';
 import { GameState } from '../engine/types';
+import { AccountCard } from './AccountCard';
+import { ConfirmModal } from './ConfirmModal';
 import { Header } from './Header';
 import { colors, radius, spacing } from './theme';
 
@@ -15,17 +17,15 @@ interface Props {
 export function StatsScreen({ state, onReset }: Props) {
   const totalGenerators = Object.values(state.generators).reduce((a, b) => a + b, 0);
 
-  const confirmReset = () => {
-    Alert.alert('Smazat celý postup?', 'Tohle smaže úplně všechno včetně hvězdného prachu. Nejde to vrátit.', [
-      { text: 'Zrušit', style: 'cancel' },
-      { text: 'Smazat', style: 'destructive', onPress: onReset },
-    ]);
-  };
+  const [confirmingReset, setConfirmingReset] = useState(false);
 
   return (
     <View style={styles.container}>
       <Header crystals={state.crystals} perSecond={productionPerSecond(state)} stardust={state.stardust} />
       <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.accountWrap}>
+          <AccountCard />
+        </View>
         <Text style={styles.heading}>📊 Statistiky</Text>
         <View style={styles.card}>
           <Stat label="Krystaly celkem" value={`💎 ${formatWhole(state.allTimeCrystals)}`} />
@@ -36,6 +36,7 @@ export function StatsScreen({ state, onReset }: Props) {
           <Stat label="Zařízení celkem" value={formatWhole(totalGenerators)} />
           <Stat label="Zakoupená vylepšení" value={String(state.upgrades.length)} />
           <Stat label="Hvězdný prach" value={`✨ ${formatWhole(state.stardust)}`} />
+          <Stat label="Nákupy z obchodu" value={String(state.entitlements.length)} />
           <Stat label="Odehráno" value={formatDuration(state.playTimeSeconds)} />
         </View>
 
@@ -46,20 +47,33 @@ export function StatsScreen({ state, onReset }: Props) {
           </Text>
           <Text style={styles.info}>
             • Offline těžba běží na {Math.round(OFFLINE_EFFICIENCY * 100)} % výkonu a počítá se nejvýše{' '}
-            {formatDuration(OFFLINE_CAP_SECONDS)}.
+            {formatDuration(offlineCapSeconds(state))}.
           </Text>
           <Text style={styles.info}>• Hra se ukládá automaticky každých pár sekund a při zavření aplikace.</Text>
           <Text style={styles.info}>• Prestiž ti dá trvalý bonus výměnou za restart běhu.</Text>
         </View>
 
         <Pressable
-          onPress={confirmReset}
+          onPress={() => setConfirmingReset(true)}
           accessibilityRole="button"
           style={({ pressed }) => [styles.resetButton, pressed && styles.resetPressed]}
         >
           <Text style={styles.resetText}>Smazat postup</Text>
         </Pressable>
       </ScrollView>
+      <ConfirmModal
+        visible={confirmingReset}
+        icon="🗑️"
+        title="Smazat celý postup?"
+        message="Tohle smaže úplně všechno včetně hvězdného prachu a nákupů. Nejde to vrátit."
+        confirmLabel="Smazat"
+        destructive
+        onConfirm={() => {
+          setConfirmingReset(false);
+          onReset();
+        }}
+        onCancel={() => setConfirmingReset(false)}
+      />
     </View>
   );
 }
@@ -81,6 +95,9 @@ const styles = StyleSheet.create({
   scroll: {
     paddingBottom: spacing.xl,
     paddingHorizontal: spacing.lg,
+  },
+  accountWrap: {
+    marginTop: spacing.md,
   },
   heading: {
     color: colors.text,

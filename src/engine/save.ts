@@ -1,5 +1,6 @@
 import { GENERATOR_BY_ID, UPGRADE_BY_ID } from './data';
 import { createInitialState, SAVE_VERSION } from './engine';
+import { ENTITLEMENT_IDS } from './shop';
 import { GameState } from './types';
 
 export const SAVE_KEY = 'hvezdny-dul.save';
@@ -40,6 +41,10 @@ export function deserialize(raw: string | null | undefined, now: number = Date.n
     ? Array.from(new Set(data.upgrades.filter((id): id is string => typeof id === 'string' && !!UPGRADE_BY_ID[id])))
     : [];
 
+  const entitlements = Array.isArray(data.entitlements)
+    ? Array.from(new Set(data.entitlements.filter((id): id is string => typeof id === 'string' && ENTITLEMENT_IDS.includes(id))))
+    : [];
+
   return {
     version: SAVE_VERSION,
     crystals: finiteNumber(data.crystals, base.crystals),
@@ -47,6 +52,7 @@ export function deserialize(raw: string | null | undefined, now: number = Date.n
     allTimeCrystals: finiteNumber(data.allTimeCrystals, base.allTimeCrystals),
     generators,
     upgrades,
+    entitlements,
     stardust: Math.floor(finiteNumber(data.stardust, base.stardust)),
     prestigeCount: Math.floor(finiteNumber(data.prestigeCount, base.prestigeCount)),
     clicks: Math.floor(finiteNumber(data.clicks, base.clicks)),
