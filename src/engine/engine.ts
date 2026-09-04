@@ -12,10 +12,11 @@ import {
   UPGRADES,
   UPGRADE_BY_ID,
 } from './data';
+import { SAVE_VERSION } from './migrations';
 import { maxLevel, STARDUST_UPGRADES, STARDUST_UPGRADE_BY_ID, StardustUpgradeDef } from './stardust';
 import { GameState, GeneratorDef, OfflineResult, UpgradeDef } from './types';
 
-export const SAVE_VERSION = 1;
+export { SAVE_VERSION };
 
 export function createInitialState(now: number = Date.now()): GameState {
   return {

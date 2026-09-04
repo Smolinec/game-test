@@ -1,5 +1,6 @@
 import { GENERATOR_BY_ID, UPGRADE_BY_ID } from './data';
-import { createInitialState, SAVE_VERSION } from './engine';
+import { createInitialState } from './engine';
+import { migrate, SAVE_VERSION } from './migrations';
 import { ENTITLEMENT_IDS } from './shop';
 import { maxLevel, STARDUST_UPGRADE_BY_ID } from './stardust';
 import { GameState } from './types';
@@ -15,9 +16,10 @@ function finiteNumber(value: unknown, fallback: number): number {
 }
 
 /**
- * Načte uložený stav. Neznámé nebo poškozené hodnoty nahradí výchozími,
- * neznámé generátory a vylepšení (např. z budoucí verze) zahodí.
- * Vrací null, když data nejdou rozumně přečíst.
+ * Načte uložený stav. Nejdřív data zmigruje na aktuální verzi formátu, pak
+ * neznámé nebo poškozené hodnoty nahradí výchozími a neznámé generátory či
+ * vylepšení (např. z budoucí verze) zahodí. Vrací null, když data nejdou
+ * rozumně přečíst.
  */
 export function deserialize(raw: string | null | undefined, now: number = Date.now()): GameState | null {
   if (!raw) return null;
@@ -27,8 +29,8 @@ export function deserialize(raw: string | null | undefined, now: number = Date.n
   } catch {
     return null;
   }
-  if (!parsed || typeof parsed !== 'object') return null;
-  const data = parsed as Record<string, unknown>;
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  const { data } = migrate(parsed as Record<string, unknown>);
   const base = createInitialState(now);
 
   const generators: Record<string, number> = {};
