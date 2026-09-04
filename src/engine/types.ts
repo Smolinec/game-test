@@ -61,6 +61,8 @@ export interface GameState {
   stardustUpgrades: Record<string, number>;
   /** Id splněných úspěchů. */
   achievements: string[];
+  /** Denní odměna. */
+  daily: { lastClaimedAt: number; streak: number };
   prestigeCount: number;
   clicks: number;
   /** Epoch ms posledního uložení / ticku – slouží k offline výpočtu. */

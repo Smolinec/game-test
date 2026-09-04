@@ -2,9 +2,11 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { dailyStatus, localDayNumber } from './src/engine/daily';
 import { availableUpgrades, canPrestige } from './src/engine/engine';
 import { useGame } from './src/hooks/useGame';
 import { AchievementToast } from './src/ui/AchievementToast';
+import { DailyRewardModal } from './src/ui/DailyRewardModal';
 import { MineScreen } from './src/ui/MineScreen';
 import { OfflineModal } from './src/ui/OfflineModal';
 import { PrestigeScreen } from './src/ui/PrestigeScreen';
@@ -25,6 +27,10 @@ export default function App() {
 function Game() {
   const { state, offline, unlockedAchievements, actions } = useGame();
   const [tab, setTab] = useState<Tab>('mine');
+  // Den, pro který hráč odložil denní odměnu tlačítkem „Později“.
+  const [dailyPostponedDay, setDailyPostponedDay] = useState<number | null>(null);
+  const now = Date.now();
+  const daily = state && offline === null && dailyPostponedDay !== localDayNumber(now) ? dailyStatus(state, now) : null;
 
   const affordableUpgrades = useMemo(
     () => (state ? availableUpgrades(state).filter((u) => u.cost <= state.crystals).length : 0),
@@ -64,6 +70,7 @@ function Game() {
       <TabBar tabs={tabs} active={tab} onChange={setTab} />
       <AchievementToast achievement={unlockedAchievements[0] ?? null} onDone={actions.dismissAchievement} />
       <OfflineModal result={offline} onClose={actions.dismissOffline} />
+      <DailyRewardModal status={daily} onClaim={actions.claimDaily} onLater={() => setDailyPostponedDay(localDayNumber(Date.now()))} />
     </SafeAreaView>
   );
 }

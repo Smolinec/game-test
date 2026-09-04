@@ -11,6 +11,7 @@ import {
   prestige,
   tick,
 } from '../engine/engine';
+import { claimDaily } from '../engine/daily';
 import { applyPurchase } from '../engine/shop';
 import { clearGame, loadGame, saveGame } from '../engine/storage';
 import { GameState, OfflineResult } from '../engine/types';
@@ -43,6 +44,7 @@ export interface GameActions {
   dismissOffline: () => void;
   /** Odebere první úspěch z fronty k zobrazení. */
   dismissAchievement: () => void;
+  claimDaily: () => void;
 }
 
 export interface GameHook {
@@ -188,6 +190,10 @@ export function useGame(): GameHook {
   }, []);
   const dismissOffline = useCallback(() => setOffline(null), []);
   const dismissAchievement = useCallback(() => setUnlockedAchievements((q) => q.slice(1)), []);
+  const claimDailyReward = useCallback(() => {
+    update((s) => claimDaily(s, Date.now()));
+    if (stateRef.current) void saveGame(stateRef.current);
+  }, [update]);
 
   return {
     state,
@@ -203,6 +209,7 @@ export function useGame(): GameHook {
       resetGame,
       dismissOffline,
       dismissAchievement,
+      claimDaily: claimDailyReward,
     },
   };
 }

@@ -8,7 +8,7 @@
  *
  * Při změně formátu: zvyš SAVE_VERSION, přidej krok do MIGRATIONS a test.
  */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 type RawSave = Record<string, unknown>;
 type MigrationStep = (data: RawSave) => RawSave;
@@ -29,6 +29,11 @@ const MIGRATIONS: Record<number, MigrationStep> = {
   2: (data) => ({
     ...data,
     achievements: Array.isArray(data.achievements) ? data.achievements : [],
+  }),
+  // v3 → v4: denní odměna.
+  3: (data) => ({
+    ...data,
+    daily: data.daily && typeof data.daily === 'object' ? data.daily : { lastClaimedAt: 0, streak: 0 },
   }),
 };
 

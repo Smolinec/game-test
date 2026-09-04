@@ -59,6 +59,11 @@ export function deserialize(raw: string | null | undefined, now: number = Date.n
     }
   }
   const stardust = Math.floor(finiteNumber(data.stardust, base.stardust));
+  const rawDaily = data.daily && typeof data.daily === 'object' ? (data.daily as Record<string, unknown>) : {};
+  const daily = {
+    lastClaimedAt: finiteNumber(rawDaily.lastClaimedAt, 0),
+    streak: Math.floor(finiteNumber(rawDaily.streak, 0)),
+  };
   const achievements = Array.isArray(data.achievements)
     ? Array.from(new Set(data.achievements.filter((id): id is string => typeof id === 'string' && !!ACHIEVEMENT_BY_ID[id])))
     : [];
@@ -76,6 +81,7 @@ export function deserialize(raw: string | null | undefined, now: number = Date.n
     stardustEarned: Math.max(stardust, Math.floor(finiteNumber(data.stardustEarned, 0))),
     stardustUpgrades,
     achievements,
+    daily,
     prestigeCount: Math.floor(finiteNumber(data.prestigeCount, base.prestigeCount)),
     clicks: Math.floor(finiteNumber(data.clicks, base.clicks)),
     lastSeenAt: finiteNumber(data.lastSeenAt, now),
