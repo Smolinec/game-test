@@ -53,8 +53,12 @@ export interface GameState {
   upgrades: string[];
   /** Trvalé nároky z obchodu (přežijí prestiž). */
   entitlements: string[];
-  /** Hvězdný prach – prestižní měna. */
+  /** Hvězdný prach – prestižní měna (neutracený zůstatek). */
   stardust: number;
+  /** Kolik hvězdného prachu hráč celkem získal (prestiž + obchod). */
+  stardustEarned: number;
+  /** Úrovně hvězdných vylepšení podle id. */
+  stardustUpgrades: Record<string, number>;
   prestigeCount: number;
   clicks: number;
   /** Epoch ms posledního uložení / ticku – slouží k offline výpočtu. */
@@ -71,5 +75,7 @@ export interface OfflineResult {
   elapsedSeconds: number;
   /** Strop offline času, který pro hráče platil. */
   capSeconds: number;
+  /** Účinnost offline těžby, která pro hráče platila (0–1). */
+  efficiency: number;
   earned: number;
 }

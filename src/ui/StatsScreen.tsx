@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { OFFLINE_EFFICIENCY } from '../engine/data';
-import { clickValue, offlineCapSeconds, productionPerSecond } from '../engine/engine';
+import { clickValue, offlineCapSeconds, offlineEfficiency, productionPerSecond } from '../engine/engine';
 import { formatDuration, formatNumber, formatWhole } from '../engine/format';
 import { GameState } from '../engine/types';
 import { AccountCard } from './AccountCard';
@@ -35,7 +34,7 @@ export function StatsScreen({ state, onReset }: Props) {
           <Stat label="Počet klepnutí" value={formatWhole(state.clicks)} />
           <Stat label="Zařízení celkem" value={formatWhole(totalGenerators)} />
           <Stat label="Zakoupená vylepšení" value={String(state.upgrades.length)} />
-          <Stat label="Hvězdný prach" value={`✨ ${formatWhole(state.stardust)}`} />
+          <Stat label="Hvězdný prach (získáno)" value={`✨ ${formatWhole(state.stardustEarned)}`} />
           <Stat label="Nákupy z obchodu" value={String(state.entitlements.length)} />
           <Stat label="Odehráno" value={formatDuration(state.playTimeSeconds)} />
         </View>
@@ -46,7 +45,7 @@ export function StatsScreen({ state, onReset }: Props) {
             • Klepáním na krystal těžíš ručně. Zařízení těží samy, i když hru nemáš otevřenou.
           </Text>
           <Text style={styles.info}>
-            • Offline těžba běží na {Math.round(OFFLINE_EFFICIENCY * 100)} % výkonu a počítá se nejvýše{' '}
+            • Offline těžba běží na {Math.round(offlineEfficiency(state) * 100)} % výkonu a počítá se nejvýše{' '}
             {formatDuration(offlineCapSeconds(state))}.
           </Text>
           <Text style={styles.info}>• Hra se ukládá automaticky každých pár sekund a při zavření aplikace.</Text>

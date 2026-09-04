@@ -26,7 +26,7 @@ function rich(crystals: number, extra: Partial<GameState> = {}): GameState {
 
 describe('klepání', () => {
   it('základní klepnutí dá 1 krystal a započítá se do statistik', () => {
-    const s = click(createInitialState(NOW));
+    const s = click(createInitialState(NOW)).state;
     expect(s.crystals).toBe(1);
     expect(s.runCrystals).toBe(1);
     expect(s.allTimeCrystals).toBe(1);

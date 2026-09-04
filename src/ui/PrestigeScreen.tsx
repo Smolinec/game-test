@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { PRESTIGE_BASE, STARDUST_BONUS } from '../engine/data';
-import { canPrestige, crystalsForNextStardust, prestigeGain, productionPerSecond, stardustMultiplier } from '../engine/engine';
+import { PRESTIGE_BASE } from '../engine/data';
+import {
+  canBuyStardustUpgrade,
+  canPrestige,
+  crystalsForNextStardust,
+  prestigeGain,
+  productionPerSecond,
+  stardustBonusPerUnit,
+  stardustMultiplier,
+  stardustUpgradeCost,
+  stardustUpgradeLevel,
+} from '../engine/engine';
+import { maxLevel, STARDUST_UPGRADES } from '../engine/stardust';
 import { formatNumber, formatWhole } from '../engine/format';
 import { GameState } from '../engine/types';
 import { ConfirmModal } from './ConfirmModal';
@@ -11,15 +22,16 @@ import { colors, radius, spacing } from './theme';
 interface Props {
   state: GameState;
   onPrestige: () => void;
+  onBuyStardustUpgrade: (upgradeId: string) => void;
 }
 
-export function PrestigeScreen({ state, onPrestige }: Props) {
+export function PrestigeScreen({ state, onPrestige, onBuyStardustUpgrade }: Props) {
   const gain = prestigeGain(state);
   const enabled = canPrestige(state);
   const nextAt = crystalsForNextStardust(state);
   const prevAt = gain * gain * PRESTIGE_BASE;
   const progress = Math.min(1, Math.max(0, (state.runCrystals - prevAt) / (nextAt - prevAt)));
-  const bonusPercent = Math.round(STARDUST_BONUS * 100);
+  const bonusPercent = Math.round(stardustBonusPerUnit(state) * 100);
   const [confirming, setConfirming] = useState(false);
 
   return (
@@ -28,13 +40,14 @@ export function PrestigeScreen({ state, onPrestige }: Props) {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.heading}>✨ Prestiž</Text>
         <Text style={styles.text}>
-          Prestiž resetuje tvůj běh, ale za krystaly vytěžené v tomto běhu dostaneš hvězdný prach. Každý hvězdný
-          prach navždy zvyšuje veškerou produkci i sílu klepnutí o {bonusPercent} %.
+          Prestiž resetuje tvůj běh, ale za krystaly vytěžené v tomto běhu dostaneš hvězdný prach. Každý
+          neutracený prach zvyšuje veškerou produkci i sílu klepnutí o {bonusPercent} %. Prach můžeš také utratit
+          za hvězdná vylepšení níže.
         </Text>
 
         <View style={styles.card}>
-          <Stat label="Hvězdný prach" value={`✨ ${formatWhole(state.stardust)}`} />
-          <Stat label="Aktuální bonus" value={`×${stardustMultiplier(state).toFixed(2).replace('.', ',')}`} />
+          <Stat label="Hvězdný prach k utracení" value={`✨ ${formatWhole(state.stardust)}`} />
+          <Stat label="Bonus z neutraceného prachu" value={`×${stardustMultiplier(state).toFixed(2).replace('.', ',')}`} />
           <Stat label="Počet prestiží" value={String(state.prestigeCount)} />
         </View>
 
@@ -57,6 +70,54 @@ export function PrestigeScreen({ state, onPrestige }: Props) {
             {enabled ? `Provést prestiž za ✨ ${gain}` : `Potřebuješ 💎 ${formatNumber(PRESTIGE_BASE)} v běhu`}
           </Text>
         </Pressable>
+
+        <Text style={styles.sectionHeading}>🔮 Hvězdná vylepšení</Text>
+        <Text style={styles.sectionText}>
+          Trvalá vylepšení za hvězdný prach. Utracený prach už nedává pasivní bonus, vylepšení ti ale zůstane
+          napořád.
+        </Text>
+        {STARDUST_UPGRADES.map((def) => {
+          const level = stardustUpgradeLevel(state, def.id);
+          const max = maxLevel(def);
+          const cost = stardustUpgradeCost(state, def.id);
+          const affordable = canBuyStardustUpgrade(state, def.id);
+          return (
+            <View key={def.id} style={styles.upgradeRow}>
+              <View style={styles.upgradeIconBox}>
+                <Text style={styles.upgradeIcon}>{def.icon}</Text>
+              </View>
+              <View style={styles.upgradeInfo}>
+                <View style={styles.upgradeTitleRow}>
+                  <Text style={styles.upgradeName}>{def.name}</Text>
+                  {max > 1 && (
+                    <View style={styles.pips}>
+                      {Array.from({ length: max }, (_, i) => (
+                        <View key={i} style={[styles.pip, i < level && styles.pipFilled]} />
+                      ))}
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.upgradeDescription}>{def.description}</Text>
+              </View>
+              <Pressable
+                onPress={() => onBuyStardustUpgrade(def.id)}
+                disabled={!affordable}
+                accessibilityRole="button"
+                accessibilityLabel={cost === null ? `${def.name} na maximu` : `Koupit ${def.name} za ${cost} prachu`}
+                style={({ pressed }) => [
+                  styles.upgradeBuy,
+                  cost === null && styles.upgradeBuyMaxed,
+                  cost !== null && !affordable && styles.upgradeBuyDisabled,
+                  pressed && affordable && styles.buttonPressed,
+                ]}
+              >
+                <Text style={[styles.upgradeBuyText, cost === null && styles.upgradeBuyMaxedText, cost !== null && !affordable && styles.upgradeBuyDisabledText]}>
+                  {cost === null ? '✓ MAX' : `✨ ${cost}`}
+                </Text>
+              </Pressable>
+            </View>
+          );
+        })}
       </ScrollView>
       <ConfirmModal
         visible={confirming}
@@ -166,5 +227,101 @@ const styles = StyleSheet.create({
   },
   buttonTextDisabled: {
     color: colors.muted,
+  },
+  sectionHeading: {
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: '800',
+    marginTop: spacing.xl,
+  },
+  sectionText: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  upgradeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  upgradeIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upgradeIcon: {
+    fontSize: 24,
+  },
+  upgradeInfo: {
+    flex: 1,
+  },
+  upgradeTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  upgradeName: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '700',
+    flexShrink: 1,
+  },
+  pips: {
+    flexDirection: 'row',
+    gap: 3,
+  },
+  pip: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  pipFilled: {
+    backgroundColor: colors.gold,
+    borderColor: colors.gold,
+  },
+  upgradeDescription: {
+    color: colors.muted,
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 17,
+  },
+  upgradeBuy: {
+    backgroundColor: colors.gold,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minWidth: 72,
+    alignItems: 'center',
+  },
+  upgradeBuyDisabled: {
+    backgroundColor: colors.disabled,
+  },
+  upgradeBuyMaxed: {
+    backgroundColor: colors.surfaceAlt,
+  },
+  upgradeBuyText: {
+    color: colors.background,
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  upgradeBuyDisabledText: {
+    color: colors.muted,
+  },
+  upgradeBuyMaxedText: {
+    color: colors.success,
   },
 });

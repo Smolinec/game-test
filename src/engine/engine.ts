@@ -12,6 +12,7 @@ import {
   UPGRADES,
   UPGRADE_BY_ID,
 } from './data';
+import { maxLevel, STARDUST_UPGRADES, STARDUST_UPGRADE_BY_ID, StardustUpgradeDef } from './stardust';
 import { GameState, GeneratorDef, OfflineResult, UpgradeDef } from './types';
 
 export const SAVE_VERSION = 1;
@@ -26,6 +27,8 @@ export function createInitialState(now: number = Date.now()): GameState {
     upgrades: [],
     entitlements: [],
     stardust: 0,
+    stardustEarned: 0,
+    stardustUpgrades: {},
     prestigeCount: 0,
     clicks: 0,
     lastSeenAt: now,
@@ -55,13 +58,87 @@ export function offlineCapSeconds(state: GameState): number {
   return hasEntitlement(state, ENTITLEMENT_OFFLINE) ? OFFLINE_CAP_PREMIUM_SECONDS : OFFLINE_CAP_SECONDS;
 }
 
+// ---------------------------------------------------------------------------
+// Hvězdná vylepšení
+// ---------------------------------------------------------------------------
+
+export function stardustUpgradeLevel(state: GameState, upgradeId: string): number {
+  return state.stardustUpgrades[upgradeId] ?? 0;
+}
+
+/** Cena další úrovně, nebo null, když je vylepšení na maximu. */
+export function stardustUpgradeCost(state: GameState, upgradeId: string): number | null {
+  const def = STARDUST_UPGRADE_BY_ID[upgradeId];
+  if (!def) return null;
+  const level = stardustUpgradeLevel(state, upgradeId);
+  return level < maxLevel(def) ? def.costs[level] : null;
+}
+
+export function canBuyStardustUpgrade(state: GameState, upgradeId: string): boolean {
+  const cost = stardustUpgradeCost(state, upgradeId);
+  return cost !== null && state.stardust >= cost;
+}
+
+export function buyStardustUpgrade(state: GameState, upgradeId: string): GameState {
+  const cost = stardustUpgradeCost(state, upgradeId);
+  if (cost === null || state.stardust < cost) return state;
+  return {
+    ...state,
+    stardust: state.stardust - cost,
+    stardustUpgrades: {
+      ...state.stardustUpgrades,
+      [upgradeId]: stardustUpgradeLevel(state, upgradeId) + 1,
+    },
+  };
+}
+
+function ownedStardustEffects(state: GameState): { def: StardustUpgradeDef; level: number }[] {
+  return STARDUST_UPGRADES.map((def) => ({ def, level: stardustUpgradeLevel(state, def.id) })).filter(
+    (u) => u.level > 0,
+  );
+}
+
+/** Bonus k produkci za každý neutracený hvězdný prach (0.1 = +10 %). */
+export function stardustBonusPerUnit(state: GameState): number {
+  for (const { def } of ownedStardustEffects(state)) {
+    if (def.effect.type === 'catalyst') return def.effect.bonusPerStardust;
+  }
+  return STARDUST_BONUS;
+}
+
+/** Násobitel ceny zařízení (1 = bez slevy). */
+export function generatorCostFactor(state: GameState): number {
+  let factor = 1;
+  for (const { def, level } of ownedStardustEffects(state)) {
+    if (def.effect.type === 'generatorDiscount') factor *= 1 - (def.effect.percentPerLevel * level) / 100;
+  }
+  return factor;
+}
+
+/** Účinnost offline těžby (0–1). */
+export function offlineEfficiency(state: GameState): number {
+  let efficiency = OFFLINE_EFFICIENCY;
+  for (const { def } of ownedStardustEffects(state)) {
+    if (def.effect.type === 'offlineEfficiency') efficiency = Math.max(efficiency, def.effect.efficiency);
+  }
+  return efficiency;
+}
+
+/** Zlatá žíla: šance a násobitel, nebo null bez vylepšení. */
+export function goldenVein(state: GameState): { chance: number; multiplier: number } | null {
+  for (const { def } of ownedStardustEffects(state)) {
+    if (def.effect.type === 'goldenVein') return { chance: def.effect.chance, multiplier: def.effect.multiplier };
+  }
+  return null;
+}
+
 function ownedUpgrades(state: GameState): UpgradeDef[] {
   return state.upgrades.map((id) => UPGRADE_BY_ID[id]).filter((u): u is UpgradeDef => !!u);
 }
 
-/** Násobitel z hvězdného prachu. */
+/** Násobitel z neutraceného hvězdného prachu. */
 export function stardustMultiplier(state: GameState): number {
-  return 1 + state.stardust * STARDUST_BONUS;
+  return 1 + state.stardust * stardustBonusPerUnit(state);
 }
 
 /** Globální násobitel (vylepšení + prestiž + nároky z obchodu). */
@@ -111,6 +188,9 @@ export function clickValue(state: GameState): number {
     if (u.effect.type === 'click') base *= u.effect.multiplier;
     if (u.effect.type === 'clickFromProduction') percent += u.effect.percent;
   }
+  for (const { def, level } of ownedStardustEffects(state)) {
+    if (def.effect.type === 'clickMultiplier') base *= Math.pow(def.effect.multiplierPerLevel, level);
+  }
   base *= stardustMultiplier(state);
   return base + (productionPerSecond(state) * percent) / 100;
 }
@@ -120,13 +200,13 @@ export function generatorCost(state: GameState, generatorId: string, count: numb
   const def = GENERATOR_BY_ID[generatorId];
   if (!def || count <= 0) return 0;
   const owned = ownedCount(state, generatorId);
-  return bulkCost(def, owned, count);
+  return bulkCost(def, owned, count, generatorCostFactor(state));
 }
 
-function bulkCost(def: GeneratorDef, owned: number, count: number): number {
+function bulkCost(def: GeneratorDef, owned: number, count: number, factor: number): number {
   // Součet geometrické řady: base * r^owned * (r^count - 1) / (r - 1)
   const r = def.costGrowth;
-  return (def.baseCost * Math.pow(r, owned) * (Math.pow(r, count) - 1)) / (r - 1);
+  return (factor * def.baseCost * Math.pow(r, owned) * (Math.pow(r, count) - 1)) / (r - 1);
 }
 
 /** Kolik jednotek generátoru si hráč může aktuálně dovolit. */
@@ -134,15 +214,16 @@ export function maxAffordable(state: GameState, generatorId: string): number {
   const def = GENERATOR_BY_ID[generatorId];
   if (!def) return 0;
   const owned = ownedCount(state, generatorId);
+  const factor = generatorCostFactor(state);
   const r = def.costGrowth;
-  const first = def.baseCost * Math.pow(r, owned);
+  const first = factor * def.baseCost * Math.pow(r, owned);
   if (state.crystals < first) return 0;
   // Inverze vzorce pro součet geometrické řady.
   const n = Math.floor(Math.log((state.crystals * (r - 1)) / first + 1) / Math.log(r));
   // Kvůli zaokrouhlení plovoucí čárky pro jistotu ověříme.
   let count = Math.max(1, n);
-  while (count > 1 && bulkCost(def, owned, count) > state.crystals) count -= 1;
-  while (bulkCost(def, owned, count + 1) <= state.crystals) count += 1;
+  while (count > 1 && bulkCost(def, owned, count, factor) > state.crystals) count -= 1;
+  while (bulkCost(def, owned, count + 1, factor) <= state.crystals) count += 1;
   return count;
 }
 
@@ -171,8 +252,19 @@ export function tick(state: GameState, dtSeconds: number, now: number = Date.now
   };
 }
 
-export function click(state: GameState): GameState {
-  return { ...addCrystals(state, clickValue(state)), clicks: state.clicks + 1 };
+/**
+ * Klepnutí. `rng` vrací číslo v <0, 1) a slouží Zlaté žíle; v testech ho lze podstrčit.
+ * Vrací nový stav a kolik krystalů klepnutí dalo.
+ */
+export function click(state: GameState, rng: () => number = Math.random): { state: GameState; gained: number; golden: boolean } {
+  let gained = clickValue(state);
+  let golden = false;
+  const vein = goldenVein(state);
+  if (vein && rng() < vein.chance) {
+    gained *= vein.multiplier;
+    golden = true;
+  }
+  return { state: { ...addCrystals(state, gained), clicks: state.clicks + 1 }, gained, golden };
 }
 
 export function buyGenerator(state: GameState, generatorId: string, count: number = 1): GameState {
@@ -241,16 +333,24 @@ export function canPrestige(state: GameState): boolean {
 export function prestige(state: GameState, now: number = Date.now()): GameState {
   const gain = prestigeGain(state);
   if (gain < 1) return state;
-  return {
+  let next: GameState = {
     ...createInitialState(now),
     allTimeCrystals: state.allTimeCrystals,
     entitlements: state.entitlements,
     stardust: state.stardust + gain,
+    stardustEarned: state.stardustEarned + gain,
+    stardustUpgrades: state.stardustUpgrades,
     prestigeCount: state.prestigeCount + 1,
     clicks: state.clicks,
     startedAt: state.startedAt,
     playTimeSeconds: state.playTimeSeconds,
   };
+  for (const { def } of ownedStardustEffects(next)) {
+    if (def.effect.type === 'quickStart') {
+      next = { ...next, crystals: def.effect.crystals, generators: { drone: def.effect.drones } };
+    }
+  }
+  return next;
 }
 
 // ---------------------------------------------------------------------------
@@ -260,13 +360,15 @@ export function prestige(state: GameState, now: number = Date.now()): GameState 
 export function applyOfflineProgress(state: GameState, now: number = Date.now()): OfflineResult {
   const elapsedSeconds = Math.max(0, (now - state.lastSeenAt) / 1000);
   const capSeconds = offlineCapSeconds(state);
+  const efficiency = offlineEfficiency(state);
   const seconds = Math.min(elapsedSeconds, capSeconds);
-  const earned = productionPerSecond(state) * seconds * OFFLINE_EFFICIENCY;
+  const earned = productionPerSecond(state) * seconds * efficiency;
   return {
     state: { ...addCrystals(state, earned), lastSeenAt: now },
     seconds,
     elapsedSeconds,
     capSeconds,
+    efficiency,
     earned,
   };
 }

@@ -54,7 +54,9 @@ function Game() {
       <View style={styles.content}>
         {tab === 'mine' && <MineScreen state={state} onTap={actions.tap} onBuy={actions.buy} />}
         {tab === 'upgrades' && <UpgradesScreen state={state} onBuy={actions.purchaseUpgrade} />}
-        {tab === 'prestige' && <PrestigeScreen state={state} onPrestige={actions.doPrestige} />}
+        {tab === 'prestige' && (
+          <PrestigeScreen state={state} onPrestige={actions.doPrestige} onBuyStardustUpgrade={actions.buyStardustUpgrade} />
+        )}
         {tab === 'shop' && <ShopScreen state={state} onPurchase={actions.purchase} />}
         {tab === 'stats' && <StatsScreen state={state} onReset={() => void actions.resetGame()} />}
       </View>

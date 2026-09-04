@@ -19,7 +19,7 @@ import { colors, spacing } from './theme';
 
 interface Props {
   state: GameState;
-  onTap: () => void;
+  onTap: () => { gained: number; golden: boolean };
   onBuy: (generatorId: string, count: number) => void;
 }
 

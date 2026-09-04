@@ -53,6 +53,8 @@ describe('ukládání', () => {
       generators: { drone: 3 },
       upgrades: ['gloves'],
       stardust: 2,
+      stardustEarned: 5,
+      stardustUpgrades: { quick_start: 1 },
     };
     expect(deserialize(serialize(state), NOW)).toEqual(state);
   });

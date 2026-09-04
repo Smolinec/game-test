@@ -103,7 +103,11 @@ export function applyPurchase(state: GameState, productId: string): GameState {
   if (!def) return state;
   switch (def.effect.type) {
     case 'stardust':
-      return { ...state, stardust: state.stardust + def.effect.amount };
+      return {
+        ...state,
+        stardust: state.stardust + def.effect.amount,
+        stardustEarned: state.stardustEarned + def.effect.amount,
+      };
     case 'timeWarp':
       return addCrystals(state, productionPerSecond(state) * def.effect.hours * 3600);
     case 'entitlement': {

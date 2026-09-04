@@ -11,7 +11,9 @@ a přes prestiž získáváš hvězdný prach s trvalým bonusem.
 - **Hromadný nákup** – ×1 / ×10 / ×100 / MAX.
 - **49 vylepšení** – násobiče generátorů (při 10/25/50/100 kusech), vylepšení klepnutí, globální bonusy,
   „synchronizace“ (klepnutí přidává % produkce).
-- **Prestiž** – hvězdný prach = ⌊√(krystaly v běhu / 10 M)⌋, každý kus +10 % k produkci navždy.
+- **Prestiž** – hvězdný prach = ⌊√(krystaly v běhu / 10 M)⌋, každý neutracený kus +10 % k produkci.
+- **Hvězdná vylepšení** – prach jde utratit za trvalá vylepšení (rychlý start po prestiži, levnější zařízení,
+  silnější klepnutí, efektivnější offline, Zlatá žíla, katalyzátor). Utracený prach přestane dávat pasivní bonus.
 - **Offline postup** – po návratu dostaneš 50 % produkce za dobu nepřítomnosti, max 8 h, s přehledným dialogem.
 - **Automatické ukládání** – každých 10 s a při přechodu aplikace do pozadí (AsyncStorage).
 - **Obchod v testovacím režimu** – balíčky hvězdného prachu, časový skok a trvalé nároky (Dvojitý výkon,
@@ -85,6 +87,7 @@ src/engine/             čistý TypeScript bez React Native – testovatelné j�
   format.ts             formátování čísel (1,5K, 2,3M…) a času
   save.ts               serializace a bezpečné načtení uložených dat
   storage.ts            napojení na AsyncStorage
+  stardust.ts           definice hvězdných vylepšení (za prach)
   shop.ts               definice placených položek a aplikace jejich efektu
 src/services/purchases.ts vrstva pro nákupy; dnes MockPurchaseProvider, později RevenueCat
 src/hooks/useGame.ts    herní smyčka (tick 100 ms), autosave, offline detekce, nákupy

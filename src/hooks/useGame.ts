@@ -3,6 +3,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import {
   applyOfflineProgress,
   buyGenerator,
+  buyStardustUpgrade as buyStardustUpgradeState,
   buyUpgrade,
   click,
   createInitialState,
@@ -23,8 +24,15 @@ const OFFLINE_THRESHOLD_SECONDS = 5;
 /** Pod touto dobou se souhrn offline postupu neukazuje (jen se tiše připíše). */
 const OFFLINE_POPUP_MIN_SECONDS = 60;
 
+export interface TapResult {
+  gained: number;
+  golden: boolean;
+}
+
 export interface GameActions {
-  tap: () => void;
+  /** Klepnutí; vrací, kolik krystalů dalo a zda zabrala Zlatá žíla. */
+  tap: () => TapResult;
+  buyStardustUpgrade: (upgradeId: string) => void;
   buy: (generatorId: string, count: number) => void;
   purchaseUpgrade: (upgradeId: string) => void;
   doPrestige: () => void;
@@ -114,7 +122,22 @@ export function useGame(): GameHook {
     };
   }, [ready]);
 
-  const tap = useCallback(() => update(click), [update]);
+  const tap = useCallback((): TapResult => {
+    let result: TapResult = { gained: 0, golden: false };
+    update((s) => {
+      const outcome = click(s);
+      result = { gained: outcome.gained, golden: outcome.golden };
+      return outcome.state;
+    });
+    return result;
+  }, [update]);
+  const buyStardustUpgrade = useCallback(
+    (upgradeId: string) => {
+      update((s) => buyStardustUpgradeState(s, upgradeId));
+      if (stateRef.current) void saveGame(stateRef.current);
+    },
+    [update],
+  );
   const buy = useCallback(
     (generatorId: string, count: number) => update((s) => buyGenerator(s, generatorId, count)),
     [update],
@@ -156,6 +179,6 @@ export function useGame(): GameHook {
   return {
     state,
     offline,
-    actions: { tap, buy, purchaseUpgrade, doPrestige, purchase, resetGame, dismissOffline },
+    actions: { tap, buyStardustUpgrade, buy, purchaseUpgrade, doPrestige, purchase, resetGame, dismissOffline },
   };
 }

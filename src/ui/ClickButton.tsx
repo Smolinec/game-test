@@ -6,7 +6,7 @@ import { colors, radius, spacing } from './theme';
 
 interface Props {
   value: number;
-  onTap: () => void;
+  onTap: () => { gained: number; golden: boolean };
 }
 
 interface Floater {
@@ -16,6 +16,7 @@ interface Floater {
   /** Boční drift během letu. */
   drift: number;
   text: string;
+  golden: boolean;
   anim: Animated.Value;
 }
 
@@ -32,8 +33,10 @@ export function ClickButton({ value, onTap }: Props) {
   const nextId = useRef(0);
 
   const handlePress = useCallback(() => {
-    onTap();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+    const result = onTap();
+    Haptics.impactAsync(result.golden ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Light).catch(
+      () => undefined,
+    );
 
     scale.stopAnimation();
     scale.setValue(0.92);
@@ -45,7 +48,8 @@ export function ClickButton({ value, onTap }: Props) {
       id,
       x: (Math.random() - 0.5) * 110,
       drift: (Math.random() - 0.5) * 40,
-      text: `+${formatNumber(value, { decimals: value < 10 ? 1 : 0 })}`,
+      text: `${result.golden ? '🌟 ' : ''}+${formatNumber(result.gained, { decimals: result.gained < 10 ? 1 : 0 })}`,
+      golden: result.golden,
       anim,
     };
     setFloaters((list) => [...list.slice(-(MAX_FLOATERS - 1)), floater]);
@@ -55,7 +59,7 @@ export function ClickButton({ value, onTap }: Props) {
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start(() => setFloaters((list) => list.filter((f) => f.id !== id)));
-  }, [onTap, scale, value]);
+  }, [onTap, scale]);
 
   return (
     <View style={styles.wrapper}>
@@ -65,6 +69,7 @@ export function ClickButton({ value, onTap }: Props) {
             key={f.id}
             style={[
               styles.floaterText,
+              f.golden && styles.floaterGolden,
               {
                 transform: [
                   { translateX: f.anim.interpolate({ inputRange: [0, 1], outputRange: [f.x, f.x + f.drift] }) },
@@ -106,6 +111,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     zIndex: 2,
+  },
+  floaterGolden: {
+    fontSize: 28,
+    color: '#FFF3B0',
   },
   floaterText: {
     position: 'absolute',
