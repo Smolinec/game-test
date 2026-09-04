@@ -57,6 +57,7 @@ Další příkazy:
 | `npm run typecheck` | kontrola typů (`tsc --noEmit`)             |
 | `npm run icons`     | přegeneruje ikony v `assets/` z SVG návrhu |
 | `npm run sounds`    | přegeneruje zvuky v `assets/sounds/` (Python 3) |
+| `npm run store:shots` | screenshoty pro obchody z `dist/` do `store/screenshots/` |
 
 ## Webová verze na vyzkoušení
 
@@ -80,6 +81,12 @@ eas build --profile production --platform all        # build do obchodů
 
 Identifikátory aplikace jsou v `app.json` (`ios.bundleIdentifier`, `android.package`) – před publikováním
 je uprav podle svého účtu.
+
+## Podklady pro obchody
+
+Texty pro App Store a Google Play (česky i anglicky) jsou ve `store/listing.*.md`, orámované
+screenshoty ve `store/screenshots/`. Jak je přegenerovat a co obchody ještě chtějí, popisuje
+[docs/STORE.md](docs/STORE.md).
 
 ## Ikony
 

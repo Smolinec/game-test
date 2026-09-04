@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# store screenshots: raw versions are derived from the framed ones
+store/screenshots/**/raw/

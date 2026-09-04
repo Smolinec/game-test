@@ -30,7 +30,8 @@
     "typecheck": "tsc --noEmit",
     "icons": "node tools/make-icons.js assets",
     "web:export": "expo export --platform web --output-dir dist",
-    "sounds": "python3 tools/make-sounds.py assets/sounds"
+    "sounds": "python3 tools/make-sounds.py assets/sounds",
+    "store:shots": "node tools/make-store-shots.js dist store/screenshots"
   },
   "private": true,
   "jest": {
