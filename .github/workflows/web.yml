@@ -34,6 +34,8 @@ jobs:
       - name: Use relative asset paths (Pages serves the site from a sub-path)
         run: |
           sed -i 's|src="/_expo/|src="./_expo/|g; s|href="/favicon.ico"|href="./favicon.ico"|g' dist/index.html
+          # Assety (zvuky) jsou v bundlu odkazované absolutně; na Pages běží web v podadresáři.
+          sed -i 's|"/assets/|"./assets/|g' dist/_expo/static/js/web/*.js
           touch dist/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

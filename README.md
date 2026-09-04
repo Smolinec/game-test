@@ -25,6 +25,8 @@ a přes prestiž získáváš hvězdný prach s trvalým bonusem.
 - **Obchod v testovacím režimu** – balíčky hvězdného prachu, časový skok a trvalé nároky (Dvojitý výkon,
   Noční směna). Nákupy se zatím jen simulují, efekt se ale ve hře projeví.
 - **Účet (již brzy)** – tlačítka pro přihlášení přes Apple a Google jsou připravená, ale zatím nejsou napojená.
+- **Zvuky** – šest syntetizovaných efektů (klepnutí, nákup, vylepšení, prestiž, Zlatá žíla, úspěch) bez licence,
+  generované skriptem `tools/make-sounds.py`; vypínají se v nastavení.
 - **Nastavení** – jazyk (čeština / angličtina podle jazyka zařízení), vibrace, animace, zvuky. Texty rozhraní
   jsou v `src/i18n/strings.ts`, anglické názvy herních dat v `src/i18n/data.ts`.
 - **Statistiky** a možnost smazat postup.
@@ -50,6 +52,7 @@ Další příkazy:
 | `npm test`          | jednotkové testy herního enginu (Jest)     |
 | `npm run typecheck` | kontrola typů (`tsc --noEmit`)             |
 | `npm run icons`     | přegeneruje ikony v `assets/` z SVG návrhu |
+| `npm run sounds`    | přegeneruje zvuky v `assets/sounds/` (Python 3) |
 
 ## Webová verze na vyzkoušení
 
@@ -100,6 +103,8 @@ src/engine/             čistý TypeScript bez React Native – testovatelné j�
   daily.ts              denní odměna a řada
   ads.ts                herní efekty odměněných videí (boost, zdvojnásobení offline)
 src/services/ads.ts     vrstva pro reklamy; dnes MockRewardedAdProvider, později AdMob
+src/services/sound.ts   přehrávání efektů přes expo-audio
+tools/make-sounds.py    generátor zvukových efektů
   migrations.ts         verze formátu uložení a migrační kroky
   signing.ts            podpis uložení (SHA-256 v čistém JS)
   shop.ts               definice placených položek a aplikace jejich efektu

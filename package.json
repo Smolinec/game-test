@@ -5,6 +5,7 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
     "expo": "~57.0.20",
+    "expo-audio": "~57.0.4",
     "expo-haptics": "~57.0.2",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
@@ -28,7 +29,8 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "icons": "node tools/make-icons.js assets",
-    "web:export": "expo export --platform web --output-dir dist"
+    "web:export": "expo export --platform web --output-dir dist",
+    "sounds": "python3 tools/make-sounds.py assets/sounds"
   },
   "private": true,
   "jest": {

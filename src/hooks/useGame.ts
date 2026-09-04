@@ -18,6 +18,7 @@ import { applyPurchase } from '../engine/shop';
 import { clearGame, loadGame, saveGame } from '../engine/storage';
 import { GameState, OfflineResult } from '../engine/types';
 import { adProvider, AdOutcome } from '../services/ads';
+import { playSound } from '../services/sound';
 import { purchaseProvider, PurchaseOutcome } from '../services/purchases';
 
 /** Jak často se počítá herní tick (ms). */
@@ -72,15 +73,17 @@ export function useGame(): GameHook {
   const stateRef = useRef<GameState | null>(null);
   const [ready, setReady] = useState(false);
 
-  const update = useCallback((fn: (s: GameState) => GameState) => {
+  /** Aplikuje přechod stavu; vrací true, když se stav skutečně změnil. */
+  const update = useCallback((fn: (s: GameState) => GameState): boolean => {
     const current = stateRef.current;
-    if (!current) return;
+    if (!current) return false;
     const next = fn(current);
-    if (next === current) return;
+    if (next === current) return false;
     const checked = checkAchievements(next);
     if (checked.unlocked.length > 0) setUnlockedAchievements((q) => [...q, ...checked.unlocked]);
     stateRef.current = checked.state;
     setState(checked.state);
+    return true;
   }, []);
 
   const applyOffline = useCallback(
@@ -153,29 +156,37 @@ export function useGame(): GameHook {
       result = { gained: outcome.gained, golden: outcome.golden };
       return outcome.state;
     });
+    playSound(result.golden ? 'golden' : 'tap');
     return result;
   }, [update]);
   const buyStardustUpgrade = useCallback(
     (upgradeId: string) => {
-      update((s) => buyStardustUpgradeState(s, upgradeId));
+      if (!update((s) => buyStardustUpgradeState(s, upgradeId))) return;
+      playSound('upgrade');
       if (stateRef.current) void saveGame(stateRef.current);
     },
     [update],
   );
   const buy = useCallback(
-    (generatorId: string, count: number) => update((s) => buyGenerator(s, generatorId, count)),
+    (generatorId: string, count: number) => {
+      if (update((s) => buyGenerator(s, generatorId, count))) playSound('buy');
+    },
     [update],
   );
   const purchaseUpgrade = useCallback(
-    (upgradeId: string) => update((s) => buyUpgrade(s, upgradeId)),
+    (upgradeId: string) => {
+      if (update((s) => buyUpgrade(s, upgradeId))) playSound('upgrade');
+    },
     [update],
   );
   const doPrestige = useCallback(() => {
-    update((s) => prestige(s, Date.now()));
+    if (!update((s) => prestige(s, Date.now()))) return;
+    playSound('prestige');
     if (stateRef.current) void saveGame(stateRef.current);
   }, [update]);
   const doAscendGalaxy = useCallback(() => {
-    update((s) => ascendGalaxy(s, Date.now()));
+    if (!update((s) => ascendGalaxy(s, Date.now()))) return;
+    playSound('prestige');
     if (stateRef.current) void saveGame(stateRef.current);
   }, [update]);
   const purchase = useCallback(
@@ -189,6 +200,7 @@ export function useGame(): GameHook {
       }
       if (outcome === 'success') {
         update((s) => applyPurchase(s, productId));
+        playSound('buy');
         if (stateRef.current) void saveGame(stateRef.current);
       }
       return outcome;

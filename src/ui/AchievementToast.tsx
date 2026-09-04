@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ACHIEVEMENT_BONUS, AchievementDef } from '../engine/achievements';
 import { useSettings, useT } from '../i18n';
+import { playSound } from '../services/sound';
 import { colors, radius, spacing } from './theme';
 
 interface Props {
@@ -19,6 +20,7 @@ export function AchievementToast({ achievement, onDone }: Props) {
 
   useEffect(() => {
     if (!achievement) return;
+    playSound('achievement');
     const slide = settings.animations ? 320 : 0;
     anim.setValue(0);
     const sequence = Animated.sequence([

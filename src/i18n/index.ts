@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { GENERATOR_BY_ID } from '../engine/data';
 import { setNumberLocale } from '../engine/format';
+import { setSoundEnabled } from '../services/sound';
 import { achievementsEn, generatorsEn, NamedText, productsEn, stardustUpgradesEn, tierUpgradeEn, upgradesEn } from './data';
 import { cs, en, Strings } from './strings';
 
@@ -153,6 +154,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setNumberLocale(settings.language);
   }, [settings.language]);
+
+  useEffect(() => {
+    setSoundEnabled(settings.sound);
+  }, [settings.sound]);
 
   const updateSettings = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => {
