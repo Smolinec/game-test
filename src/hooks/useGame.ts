@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
+import { AchievementDef, checkAchievements } from '../engine/achievements';
 import {
   applyOfflineProgress,
   buyGenerator,
@@ -40,17 +41,22 @@ export interface GameActions {
   purchase: (productId: string) => Promise<PurchaseOutcome>;
   resetGame: () => Promise<void>;
   dismissOffline: () => void;
+  /** Odebere první úspěch z fronty k zobrazení. */
+  dismissAchievement: () => void;
 }
 
 export interface GameHook {
   state: GameState | null;
   offline: OfflineResult | null;
+  /** Nově odemčené úspěchy čekající na zobrazení (nejstarší první). */
+  unlockedAchievements: AchievementDef[];
   actions: GameActions;
 }
 
 export function useGame(): GameHook {
   const [state, setState] = useState<GameState | null>(null);
   const [offline, setOffline] = useState<OfflineResult | null>(null);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<AchievementDef[]>([]);
   const stateRef = useRef<GameState | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -59,8 +65,10 @@ export function useGame(): GameHook {
     if (!current) return;
     const next = fn(current);
     if (next === current) return;
-    stateRef.current = next;
-    setState(next);
+    const checked = checkAchievements(next);
+    if (checked.unlocked.length > 0) setUnlockedAchievements((q) => [...q, ...checked.unlocked]);
+    stateRef.current = checked.state;
+    setState(checked.state);
   }, []);
 
   const applyOffline = useCallback(
@@ -82,8 +90,11 @@ export function useGame(): GameHook {
       const loaded = await loadGame(now);
       if (cancelled) return;
       const initial = loaded ? applyOffline(loaded, now) : createInitialState(now);
-      stateRef.current = initial;
-      setState(initial);
+      // Úspěchy přidané v novější verzi hry se doplní i hráčům, kteří je splnili dřív.
+      const checked = checkAchievements(initial);
+      if (checked.unlocked.length > 0) setUnlockedAchievements(checked.unlocked);
+      stateRef.current = checked.state;
+      setState(checked.state);
       setReady(true);
     })();
     return () => {
@@ -173,12 +184,25 @@ export function useGame(): GameHook {
     stateRef.current = fresh;
     setState(fresh);
     setOffline(null);
+    setUnlockedAchievements([]);
   }, []);
   const dismissOffline = useCallback(() => setOffline(null), []);
+  const dismissAchievement = useCallback(() => setUnlockedAchievements((q) => q.slice(1)), []);
 
   return {
     state,
     offline,
-    actions: { tap, buyStardustUpgrade, buy, purchaseUpgrade, doPrestige, purchase, resetGame, dismissOffline },
+    unlockedAchievements,
+    actions: {
+      tap,
+      buyStardustUpgrade,
+      buy,
+      purchaseUpgrade,
+      doPrestige,
+      purchase,
+      resetGame,
+      dismissOffline,
+      dismissAchievement,
+    },
   };
 }

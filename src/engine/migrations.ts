@@ -8,7 +8,7 @@
  *
  * Při změně formátu: zvyš SAVE_VERSION, přidej krok do MIGRATIONS a test.
  */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 type RawSave = Record<string, unknown>;
 type MigrationStep = (data: RawSave) => RawSave;
@@ -24,6 +24,11 @@ const MIGRATIONS: Record<number, MigrationStep> = {
       data.stardustUpgrades && typeof data.stardustUpgrades === 'object' ? data.stardustUpgrades : {},
     stardustEarned:
       typeof data.stardustEarned === 'number' ? data.stardustEarned : typeof data.stardust === 'number' ? data.stardust : 0,
+  }),
+  // v2 → v3: úspěchy.
+  2: (data) => ({
+    ...data,
+    achievements: Array.isArray(data.achievements) ? data.achievements : [],
   }),
 };
 

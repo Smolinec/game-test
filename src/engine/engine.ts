@@ -12,6 +12,7 @@ import {
   UPGRADES,
   UPGRADE_BY_ID,
 } from './data';
+import { achievementMultiplier } from './achievements';
 import { SAVE_VERSION } from './migrations';
 import { maxLevel, STARDUST_UPGRADES, STARDUST_UPGRADE_BY_ID, StardustUpgradeDef } from './stardust';
 import { GameState, GeneratorDef, OfflineResult, UpgradeDef } from './types';
@@ -30,6 +31,7 @@ export function createInitialState(now: number = Date.now()): GameState {
     stardust: 0,
     stardustEarned: 0,
     stardustUpgrades: {},
+    achievements: [],
     prestigeCount: 0,
     clicks: 0,
     lastSeenAt: now,
@@ -142,9 +144,9 @@ export function stardustMultiplier(state: GameState): number {
   return 1 + state.stardust * stardustBonusPerUnit(state);
 }
 
-/** Globální násobitel (vylepšení + prestiž + nároky z obchodu). */
+/** Globální násobitel (vylepšení + prestiž + nároky z obchodu + úspěchy). */
 export function globalMultiplier(state: GameState): number {
-  let mult = stardustMultiplier(state);
+  let mult = stardustMultiplier(state) * achievementMultiplier(state);
   if (hasEntitlement(state, ENTITLEMENT_BOOST)) mult *= PREMIUM_BOOST_MULTIPLIER;
   for (const u of ownedUpgrades(state)) {
     if (u.effect.type === 'global') mult *= u.effect.multiplier;
@@ -341,6 +343,7 @@ export function prestige(state: GameState, now: number = Date.now()): GameState 
     stardust: state.stardust + gain,
     stardustEarned: state.stardustEarned + gain,
     stardustUpgrades: state.stardustUpgrades,
+    achievements: state.achievements,
     prestigeCount: state.prestigeCount + 1,
     clicks: state.clicks,
     startedAt: state.startedAt,

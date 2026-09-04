@@ -4,6 +4,7 @@ import { clickValue, offlineCapSeconds, offlineEfficiency, productionPerSecond }
 import { formatDuration, formatNumber, formatWhole } from '../engine/format';
 import { GameState } from '../engine/types';
 import { AccountCard } from './AccountCard';
+import { AchievementsSection } from './AchievementsSection';
 import { ConfirmModal } from './ConfirmModal';
 import { Header } from './Header';
 import { colors, radius, spacing } from './theme';
@@ -38,6 +39,8 @@ export function StatsScreen({ state, onReset }: Props) {
           <Stat label="Nákupy z obchodu" value={String(state.entitlements.length)} />
           <Stat label="Odehráno" value={formatDuration(state.playTimeSeconds)} />
         </View>
+
+        <AchievementsSection state={state} />
 
         <Text style={styles.heading}>ℹ️ Jak to funguje</Text>
         <View style={styles.card}>

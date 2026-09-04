@@ -1,3 +1,4 @@
+import { ACHIEVEMENT_BY_ID } from './achievements';
 import { GENERATOR_BY_ID, UPGRADE_BY_ID } from './data';
 import { createInitialState } from './engine';
 import { migrate, SAVE_VERSION } from './migrations';
@@ -58,6 +59,9 @@ export function deserialize(raw: string | null | undefined, now: number = Date.n
     }
   }
   const stardust = Math.floor(finiteNumber(data.stardust, base.stardust));
+  const achievements = Array.isArray(data.achievements)
+    ? Array.from(new Set(data.achievements.filter((id): id is string => typeof id === 'string' && !!ACHIEVEMENT_BY_ID[id])))
+    : [];
 
   return {
     version: SAVE_VERSION,
@@ -71,6 +75,7 @@ export function deserialize(raw: string | null | undefined, now: number = Date.n
     // Starší uložení pole nemají – získaný prach je pak aspoň aktuální zůstatek.
     stardustEarned: Math.max(stardust, Math.floor(finiteNumber(data.stardustEarned, 0))),
     stardustUpgrades,
+    achievements,
     prestigeCount: Math.floor(finiteNumber(data.prestigeCount, base.prestigeCount)),
     clicks: Math.floor(finiteNumber(data.clicks, base.clicks)),
     lastSeenAt: finiteNumber(data.lastSeenAt, now),

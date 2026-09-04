@@ -59,6 +59,8 @@ export interface GameState {
   stardustEarned: number;
   /** Úrovně hvězdných vylepšení podle id. */
   stardustUpgrades: Record<string, number>;
+  /** Id splněných úspěchů. */
+  achievements: string[];
   prestigeCount: number;
   clicks: number;
   /** Epoch ms posledního uložení / ticku – slouží k offline výpočtu. */

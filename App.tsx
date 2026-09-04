@@ -4,6 +4,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { availableUpgrades, canPrestige } from './src/engine/engine';
 import { useGame } from './src/hooks/useGame';
+import { AchievementToast } from './src/ui/AchievementToast';
 import { MineScreen } from './src/ui/MineScreen';
 import { OfflineModal } from './src/ui/OfflineModal';
 import { PrestigeScreen } from './src/ui/PrestigeScreen';
@@ -22,7 +23,7 @@ export default function App() {
 }
 
 function Game() {
-  const { state, offline, actions } = useGame();
+  const { state, offline, unlockedAchievements, actions } = useGame();
   const [tab, setTab] = useState<Tab>('mine');
 
   const affordableUpgrades = useMemo(
@@ -61,6 +62,7 @@ function Game() {
         {tab === 'stats' && <StatsScreen state={state} onReset={() => void actions.resetGame()} />}
       </View>
       <TabBar tabs={tabs} active={tab} onChange={setTab} />
+      <AchievementToast achievement={unlockedAchievements[0] ?? null} onDone={actions.dismissAchievement} />
       <OfflineModal result={offline} onClose={actions.dismissOffline} />
     </SafeAreaView>
   );
