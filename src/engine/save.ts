@@ -3,13 +3,15 @@ import { GENERATOR_BY_ID, UPGRADE_BY_ID } from './data';
 import { createInitialState } from './engine';
 import { migrate, SAVE_VERSION } from './migrations';
 import { ENTITLEMENT_IDS } from './shop';
+import { unwrapSigned, wrapSigned } from './signing';
 import { maxLevel, STARDUST_UPGRADE_BY_ID } from './stardust';
 import { GameState } from './types';
 
 export const SAVE_KEY = 'hvezdny-dul.save';
 
+/** Serializuje stav do podepsané obálky (viz `signing.ts`). */
 export function serialize(state: GameState): string {
-  return JSON.stringify(state);
+  return wrapSigned(JSON.stringify(state));
 }
 
 function finiteNumber(value: unknown, fallback: number): number {
@@ -24,9 +26,15 @@ function finiteNumber(value: unknown, fallback: number): number {
  */
 export function deserialize(raw: string | null | undefined, now: number = Date.now()): GameState | null {
   if (!raw) return null;
+  const unwrapped = unwrapSigned(raw);
+  if (unwrapped.kind === 'invalid') return null;
+  if (unwrapped.kind === 'tampered') {
+    console.warn('Uložená hra má neplatný podpis, ignoruji ji.');
+    return null;
+  }
   let parsed: unknown;
   try {
-    parsed = JSON.parse(raw);
+    parsed = JSON.parse(unwrapped.payload);
   } catch {
     return null;
   }

@@ -99,6 +99,7 @@ src/engine/             čistý TypeScript bez React Native – testovatelné j�
   ads.ts                herní efekty odměněných videí (boost, zdvojnásobení offline)
 src/services/ads.ts     vrstva pro reklamy; dnes MockRewardedAdProvider, později AdMob
   migrations.ts         verze formátu uložení a migrační kroky
+  signing.ts            podpis uložení (SHA-256 v čistém JS)
   shop.ts               definice placených položek a aplikace jejich efektu
 src/services/purchases.ts vrstva pro nákupy; dnes MockPurchaseProvider, později RevenueCat
 src/hooks/useGame.ts    herní smyčka (tick 100 ms), autosave, offline detekce, nákupy
@@ -107,6 +108,13 @@ tools/make-icons.js     generátor ikon
 .github/workflows/      nasazení webové verze na GitHub Pages
 __tests__/              Jest testy enginu
 ```
+
+## Ochrana uložení
+
+Uložený stav je zabalený do obálky s podpisem SHA-256 (`src/engine/signing.ts`). Ručně upravené uložení
+se nenačte a hra začne znovu. Starší nepodepsaná uložení se ještě načtou a při dalším uložení dostanou podpis.
+Tajný řetězec je součástí aplikace, takže jde o ochranu proti běžné manipulaci, ne o bezpečnost; nároky z nákupů
+se po napojení musí ověřovat na serveru.
 
 ## Napojení plateb a přihlášení
 
