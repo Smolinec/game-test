@@ -8,7 +8,18 @@ export interface NamedText {
   description: string;
 }
 
-export const generatorsEn: Record<string, NamedText> = {
+/** Překlady herních dat pro jeden jazyk; klíče jsou id z `src/engine`. */
+export interface DataTranslations {
+  generators: Record<string, NamedText>;
+  upgrades: Record<string, NamedText>;
+  /** Šablony pro generovaná vylepšení zařízení (id `<generator>_<I..IV>`). */
+  tierUpgrade: { name: string; description: string };
+  products: Record<string, NamedText>;
+  stardustUpgrades: Record<string, NamedText>;
+  achievements: Record<string, NamedText>;
+}
+
+const generators: Record<string, NamedText> = {
   drone: { name: 'Mining drone', description: 'A small autonomous drone that collects crystals from the surface.' },
   drill: { name: 'Drill rig', description: 'Drills deep into the rock where the crystals are bigger.' },
   refinery: { name: 'Refinery', description: 'Purifies raw ore and gets many times more crystals out of it.' },
@@ -24,7 +35,7 @@ export const generatorsEn: Record<string, NamedText> = {
   multiverse: { name: 'Multiverse mine', description: 'Mines in infinitely many universes at once.' },
 };
 
-export const upgradesEn: Record<string, NamedText> = {
+const upgrades: Record<string, NamedText> = {
   gloves: { name: 'Reinforced gloves', description: 'Taps give ×2 crystals.' },
   laser_pick: { name: 'Laser pickaxe', description: 'Taps give ×2 crystals.' },
   exosuit: { name: 'Exosuit', description: 'Taps give ×3 crystals.' },
@@ -36,13 +47,12 @@ export const upgradesEn: Record<string, NamedText> = {
   singularity: { name: 'Singularity', description: 'All production ×2.' },
 };
 
-/** Šablony pro generovaná vylepšení zařízení (id `<generator>_<I..IV>`). */
-export const tierUpgradeEn = {
+const tierUpgrade = {
   name: '{generator} {suffix}',
   description: '{generator}: production ×{mult}.',
 };
 
-export const productsEn: Record<string, NamedText> = {
+const products: Record<string, NamedText> = {
   stardust_small: { name: 'Handful of stardust', description: '+10 stardust instantly, no prestige needed.' },
   stardust_medium: { name: 'Chest of stardust', description: '+35 stardust instantly.' },
   stardust_large: { name: 'Nebula of stardust', description: '+100 stardust instantly.' },
@@ -51,7 +61,7 @@ export const productsEn: Record<string, NamedText> = {
   offline_24h: { name: 'Night shift', description: 'Offline mining counts up to 24 hours instead of 8.' },
 };
 
-export const stardustUpgradesEn: Record<string, NamedText> = {
+const stardustUpgrades: Record<string, NamedText> = {
   quick_start: { name: 'Quick start', description: 'After prestige you start with 10 drones and 1,000 crystals.' },
   stronger_click: { name: 'Stronger tap', description: 'Each level doubles the tap value.' },
   cheaper_generators: { name: 'Cheaper devices', description: 'Each level lowers all device prices by 5 %.' },
@@ -60,7 +70,7 @@ export const stardustUpgradesEn: Record<string, NamedText> = {
   catalyst: { name: 'Star catalyst', description: 'The bonus per unspent stardust rises from 10 % to 15 %.' },
 };
 
-export const achievementsEn: Record<string, NamedText> = {
+const achievements: Record<string, NamedText> = {
   clicks_100: { name: 'First blisters', description: 'Tap 100 times.' },
   clicks_1k: { name: 'Persistent miner', description: 'Tap 1,000 times.' },
   clicks_10k: { name: 'Steel fingers', description: 'Tap 10,000 times.' },
@@ -90,3 +100,5 @@ export const achievementsEn: Record<string, NamedText> = {
   time_10h: { name: 'Night shift', description: 'Play for 10 hours.' },
   time_100h: { name: 'Life in the mine', description: 'Play for 100 hours.' },
 };
+
+export const dataEn: DataTranslations = { generators, upgrades, tierUpgrade, products, stardustUpgrades, achievements };

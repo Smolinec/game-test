@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
-import { Language, useSettings, useT } from '../i18n';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { LANGUAGES, LOCALES, useSettings, useT } from '../i18n';
 import { colors, radius, spacing } from './theme';
 
 /** Nastavení: jazyk a přepínače vibrací, animací a zvuku. */
@@ -8,33 +8,29 @@ export function SettingsSection() {
   const { t } = useT();
   const { settings, updateSettings } = useSettings();
 
-  const languages: { key: Language; label: string }[] = [
-    { key: 'cs', label: t('settings.languageCs') },
-    { key: 'en', label: t('settings.languageEn') },
-  ];
-
   return (
     <View>
       <Text style={styles.heading}>{t('settings.title')}</Text>
       <View style={styles.card}>
-        <View style={styles.row}>
+        <View style={styles.languageBlock}>
           <Text style={styles.label}>{t('settings.language')}</Text>
-          <View style={styles.group}>
-            {languages.map((lang) => {
-              const active = settings.language === lang.key;
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.group}>
+            {LANGUAGES.map((lang) => {
+              const active = settings.language === lang;
               return (
                 <Pressable
-                  key={lang.key}
-                  onPress={() => updateSettings({ language: lang.key })}
+                  key={lang}
+                  onPress={() => updateSettings({ language: lang })}
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
+                  accessibilityLabel={LOCALES[lang].label}
                   style={[styles.pill, active && styles.pillActive]}
                 >
-                  <Text style={[styles.pillText, active && styles.pillTextActive]}>{lang.label}</Text>
+                  <Text style={[styles.pillText, active && styles.pillTextActive]}>{LOCALES[lang].label}</Text>
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
         </View>
         <Toggle label={t('settings.haptics')} value={settings.haptics} onChange={(v) => updateSettings({ haptics: v })} />
         <Toggle label={t('settings.animations')} value={settings.animations} onChange={(v) => updateSettings({ animations: v })} />
@@ -80,6 +76,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 32,
+  },
+  languageBlock: {
+    gap: spacing.sm,
   },
   label: {
     color: colors.text,

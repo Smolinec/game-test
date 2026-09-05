@@ -3,8 +3,8 @@ import { GENERATORS, UPGRADES } from '../src/engine/data';
 import { formatNumber, setNumberLocale } from '../src/engine/format';
 import { PRODUCTS } from '../src/engine/shop';
 import { STARDUST_UPGRADES } from '../src/engine/stardust';
-import { interpolate, parseSettings, translate, translateData } from '../src/i18n';
-import { cs, en } from '../src/i18n/strings';
+import { interpolate, LANGUAGES, languageFromLocale, LOCALES, parseSettings, translate, translateData } from '../src/i18n';
+import { cs } from '../src/i18n/strings';
 
 describe('překlady rozhraní', () => {
   it('interpolace doplní parametry a neznámé nechá', () => {
@@ -12,13 +12,25 @@ describe('překlady rozhraní', () => {
     expect(interpolate('{missing}', {})).toBe('{missing}');
   });
 
-  it('oba jazyky mají stejné klíče a stejné parametry', () => {
+  it('všechny jazyky mají stejné klíče a stejné parametry jako čeština', () => {
     const csFlat = flatten(cs);
-    const enFlat = flatten(en);
-    expect(Object.keys(enFlat).sort()).toEqual(Object.keys(csFlat).sort());
-    for (const key of Object.keys(csFlat)) {
-      expect(params(enFlat[key]).sort()).toEqual(params(csFlat[key]).sort());
+    for (const lang of LANGUAGES) {
+      const flat = flatten(LOCALES[lang].strings);
+      expect(Object.keys(flat).sort()).toEqual(Object.keys(csFlat).sort());
+      for (const key of Object.keys(csFlat)) {
+        expect({ lang, key, params: params(flat[key]).sort() }).toEqual({ lang, key, params: params(csFlat[key]).sort() });
+        expect(flat[key].trim().length).toBeGreaterThan(0);
+      }
     }
+  });
+
+  it('jazyk zařízení se mapuje na podporovaný jazyk', () => {
+    expect(languageFromLocale('de-AT')).toBe('de');
+    expect(languageFromLocale('pt_BR')).toBe('pt');
+    expect(languageFromLocale('sk')).toBe('sk');
+    expect(languageFromLocale('ja-JP')).toBe('ja');
+    expect(languageFromLocale('hu-HU')).toBe('en');
+    expect(languageFromLocale(undefined)).toBe('en');
   });
 
   it('translate vrací text podle jazyka a klíč při chybě', () => {
@@ -30,19 +42,20 @@ describe('překlady rozhraní', () => {
 });
 
 describe('překlady herních dat', () => {
-  it('každé zařízení, vylepšení, produkt, hvězdné vylepšení a úspěch má anglický název', () => {
-    for (const g of GENERATORS) {
-      const t = translateData('en', 'generator', g);
-      expect(t.name).not.toBe(g.name);
-      expect(t.description.length).toBeGreaterThan(5);
+  it('každý jazyk má přeložené všechny herní objekty', () => {
+    for (const lang of LANGUAGES) {
+      if (lang === 'cs') continue;
+      const data = LOCALES[lang].data!;
+      for (const g of GENERATORS) expect({ lang, id: g.id, ok: !!data.generators[g.id]?.name && !!data.generators[g.id]?.description }).toEqual({ lang, id: g.id, ok: true });
+      for (const u of UPGRADES) {
+        const translated = translateData(lang, 'upgrade', u);
+        const special = !/_(I|II|III|IV)$/.test(u.id);
+        expect({ lang, id: u.id, ok: (special ? !!data.upgrades[u.id]?.name : true) && translated.name.trim().length > 0 && translated.description.trim().length > 0 }).toEqual({ lang, id: u.id, ok: true });
+      }
+      for (const p of PRODUCTS) expect({ lang, id: p.id, ok: !!data.products[p.id]?.name }).toEqual({ lang, id: p.id, ok: true });
+      for (const s of STARDUST_UPGRADES) expect({ lang, id: s.id, ok: !!data.stardustUpgrades[s.id]?.name }).toEqual({ lang, id: s.id, ok: true });
+      for (const a of ACHIEVEMENTS) expect({ lang, id: a.id, ok: !!data.achievements[a.id]?.name }).toEqual({ lang, id: a.id, ok: true });
     }
-    for (const u of UPGRADES) {
-      const t = translateData('en', 'upgrade', u);
-      expect(t.name).not.toBe(u.name);
-    }
-    for (const p of PRODUCTS) expect(translateData('en', 'product', p).name).not.toBe(p.name);
-    for (const s of STARDUST_UPGRADES) expect(translateData('en', 'stardustUpgrade', s).name).not.toBe(s.name);
-    for (const a of ACHIEVEMENTS) expect(translateData('en', 'achievement', a).name).not.toBe(a.name);
   });
 
   it('generovaná vylepšení zařízení se skládají ze šablony', () => {
@@ -67,10 +80,14 @@ describe('nastavení', () => {
     expect(parseSettings('{bad').language).toMatch(/cs|en/);
   });
 
-  it('formát čísel respektuje jazyk', () => {
-    setNumberLocale('en');
+  it('formát čísel respektuje oddělovač jazyka', () => {
+    setNumberLocale(LOCALES.en.decimalSeparator);
     expect(formatNumber(12_345)).toBe('12.35K');
-    setNumberLocale('cs');
+    setNumberLocale(LOCALES.de.decimalSeparator);
+    expect(formatNumber(12_345)).toBe('12,35K');
+    setNumberLocale(LOCALES.ja.decimalSeparator);
+    expect(formatNumber(12_345)).toBe('12.35K');
+    setNumberLocale(LOCALES.cs.decimalSeparator);
     expect(formatNumber(12_345)).toBe('12,35K');
   });
 });

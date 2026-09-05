@@ -115,8 +115,6 @@ export const cs = {
     haptics: 'Vibrace při klepnutí',
     animations: 'Animace',
     sound: 'Zvuky',
-    languageCs: 'Čeština',
-    languageEn: 'English',
   },
   stats: {
     title: '📊 Statistiky',
@@ -301,8 +299,6 @@ export const en: Strings = {
     haptics: 'Tap vibration',
     animations: 'Animations',
     sound: 'Sounds',
-    languageCs: 'Čeština',
-    languageEn: 'English',
   },
   stats: {
     title: '📊 Statistics',

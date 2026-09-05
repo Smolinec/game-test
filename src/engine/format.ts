@@ -1,10 +1,10 @@
 const SUFFIXES = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
 
 /** Desetinný oddělovač podle jazyka rozhraní; výchozí je čeština. */
-let decimalSeparator = ',';
+let decimalSeparator: '.' | ',' = ',';
 
-export function setNumberLocale(language: 'cs' | 'en'): void {
-  decimalSeparator = language === 'en' ? '.' : ',';
+export function setNumberLocale(separator: '.' | ','): void {
+  decimalSeparator = separator;
 }
 
 /**

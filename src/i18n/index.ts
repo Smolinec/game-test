@@ -3,10 +3,12 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { GENERATOR_BY_ID } from '../engine/data';
 import { setNumberLocale } from '../engine/format';
 import { setSoundEnabled } from '../services/sound';
-import { achievementsEn, generatorsEn, NamedText, productsEn, stardustUpgradesEn, tierUpgradeEn, upgradesEn } from './data';
-import { cs, en, Strings } from './strings';
+import { DataTranslations, NamedText } from './data';
+import { isLanguage, Language, languageFromLocale, LOCALES } from './locales';
+import { cs } from './strings';
 
-export type Language = 'cs' | 'en';
+export type { Language } from './locales';
+export { LANGUAGES, LOCALES, languageFromLocale } from './locales';
 
 export interface Settings {
   language: Language;
@@ -17,15 +19,12 @@ export interface Settings {
 
 export const SETTINGS_KEY = 'hvezdny-dul.settings';
 
-const DICTIONARIES: Record<Language, Strings> = { cs, en };
-
-/** Jazyk podle zařízení: čeština a slovenština → cs, jinak angličtina. */
+/** Jazyk podle zařízení; jazyky bez překladu spadnou na angličtinu. */
 export function detectLanguage(): Language {
   try {
-    const locale = Intl.DateTimeFormat().resolvedOptions().locale ?? '';
-    return /^(cs|sk)/i.test(locale) ? 'cs' : 'en';
+    return languageFromLocale(Intl.DateTimeFormat().resolvedOptions().locale);
   } catch {
-    return 'cs';
+    return 'en';
   }
 }
 
@@ -39,7 +38,7 @@ export function parseSettings(raw: string | null | undefined): Settings {
   try {
     const data = JSON.parse(raw) as Record<string, unknown>;
     return {
-      language: data.language === 'en' || data.language === 'cs' ? data.language : base.language,
+      language: isLanguage(data.language) ? data.language : base.language,
       haptics: typeof data.haptics === 'boolean' ? data.haptics : base.haptics,
       animations: typeof data.animations === 'boolean' ? data.animations : base.animations,
       sound: typeof data.sound === 'boolean' ? data.sound : base.sound,
@@ -64,7 +63,7 @@ export function interpolate(template: string, params?: Params): string {
 /** Přeloží klíč ve tvaru "sekce.klíč" v daném jazyce. */
 export function translate(language: Language, key: string, params?: Params): string {
   const [section, name] = key.split('.');
-  const dict = DICTIONARIES[language] as unknown as Record<string, Record<string, string>>;
+  const dict = LOCALES[language].strings as unknown as Record<string, Record<string, string>>;
   const template = dict[section]?.[name] ?? (cs as unknown as Record<string, Record<string, string>>)[section]?.[name] ?? key;
   return interpolate(template, params);
 }
@@ -77,28 +76,28 @@ export type DataKind = 'generator' | 'upgrade' | 'product' | 'stardustUpgrade' |
 
 const TIER_RE = /^(.+)_(I|II|III|IV)$/;
 
-function englishText(kind: DataKind, id: string, fallback: NamedText, multiplier?: number): NamedText {
+function localizedText(data: DataTranslations, kind: DataKind, id: string, fallback: NamedText, multiplier?: number): NamedText {
   switch (kind) {
     case 'generator':
-      return generatorsEn[id] ?? fallback;
+      return data.generators[id] ?? fallback;
     case 'upgrade': {
-      if (upgradesEn[id]) return upgradesEn[id];
+      if (data.upgrades[id]) return data.upgrades[id];
       const m = TIER_RE.exec(id);
-      if (m && generatorsEn[m[1]]) {
-        const generator = generatorsEn[m[1]].name;
+      if (m && data.generators[m[1]]) {
+        const generator = data.generators[m[1]].name;
         return {
-          name: interpolate(tierUpgradeEn.name, { generator, suffix: m[2] }),
-          description: interpolate(tierUpgradeEn.description, { generator, mult: multiplier ?? '' }),
+          name: interpolate(data.tierUpgrade.name, { generator, suffix: m[2] }),
+          description: interpolate(data.tierUpgrade.description, { generator, mult: multiplier ?? '' }),
         };
       }
       return fallback;
     }
     case 'product':
-      return productsEn[id] ?? fallback;
+      return data.products[id] ?? fallback;
     case 'stardustUpgrade':
-      return stardustUpgradesEn[id] ?? fallback;
+      return data.stardustUpgrades[id] ?? fallback;
     case 'achievement':
-      return achievementsEn[id] ?? fallback;
+      return data.achievements[id] ?? fallback;
   }
 }
 
@@ -107,10 +106,11 @@ export function translateData(
   kind: DataKind,
   def: { id: string; name: string; description: string; effect?: unknown },
 ): NamedText {
-  if (language === 'cs') return { name: def.name, description: def.description };
+  const data = LOCALES[language].data;
+  if (!data) return { name: def.name, description: def.description };
   const effect = def.effect as { type?: string; multiplier?: number } | undefined;
   const multiplier = effect?.type === 'generator' ? effect.multiplier : undefined;
-  return englishText(kind, def.id, { name: def.name, description: def.description }, multiplier);
+  return localizedText(data, kind, def.id, { name: def.name, description: def.description }, multiplier);
 }
 
 // ---------------------------------------------------------------------------
@@ -152,7 +152,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    setNumberLocale(settings.language);
+    setNumberLocale(LOCALES[settings.language].decimalSeparator);
   }, [settings.language]);
 
   useEffect(() => {

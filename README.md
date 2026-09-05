@@ -31,8 +31,12 @@ a přes prestiž získáváš hvězdný prach s trvalým bonusem.
   a počítadlo krystalů, které se k nové hodnotě dopočítá místo skoku.
 - **Zvuky** – šest syntetizovaných efektů (klepnutí, nákup, vylepšení, prestiž, Zlatá žíla, úspěch) bez licence,
   generované skriptem `tools/make-sounds.py`; vypínají se v nastavení.
-- **Nastavení** – jazyk (čeština / angličtina podle jazyka zařízení), vibrace, animace, zvuky. Texty rozhraní
-  jsou v `src/i18n/strings.ts`, anglické názvy herních dat v `src/i18n/data.ts`.
+- **Nastavení** – jazyk, vibrace, animace, zvuky. Hra je v 11 jazycích (čeština, slovenština, angličtina,
+  němčina, španělština, francouzština, italština, polština, portugalština, ruština, japonština) a při prvním
+  spuštění se vybere podle jazyka zařízení; neznámý jazyk spadne na angličtinu. Češtinu a angličtinu drží
+  `src/i18n/strings.ts` a `src/i18n/data.ts`, ostatní jazyky mají po jednom souboru v `src/i18n/locales/`
+  (texty rozhraní i názvy generátorů, vylepšení, úspěchů a produktů). Registr jazyků je
+  `src/i18n/locales/index.ts`. Texty pro obchody (`store/`) zůstávají jen česky a anglicky.
 - **Statistiky** a možnost smazat postup.
 
 ## Spuštění
@@ -121,7 +125,7 @@ tools/make-sounds.py    generátor zvukových efektů
   signing.ts            podpis uložení (SHA-256 v čistém JS)
   shop.ts               definice placených položek a aplikace jejich efektu
 src/services/purchases.ts vrstva pro nákupy; dnes MockPurchaseProvider, později RevenueCat
-src/i18n/               překlady (cs/en), nastavení a jejich ukládání
+src/i18n/               překlady (11 jazyků v locales/), nastavení a jejich ukládání
 src/hooks/useGame.ts    herní smyčka (tick 100 ms), autosave, offline detekce, nákupy
 src/ui/                 obrazovky a komponenty (Těžba, Vylepšení, Prestiž, Info)
 tools/make-icons.js     generátor ikon
